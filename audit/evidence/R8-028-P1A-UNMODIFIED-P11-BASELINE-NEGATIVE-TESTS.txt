@@ -1,0 +1,220 @@
+FF.F                                                             [100%]
+=================================== FAILURES ===================================
+_ ConfigValidationTests.test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts _
+
+self = <test_engine.ConfigValidationTests testMethod=test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts>
+
+    def test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cfg = base_config(root, root / "publisher.git", root / "source.git")
+            cfg["publisher"]["clone_url"] = "https://git.publisher.invalid/org/publisher.git"
+            cfg["publisher"]["allowed_hosts"] = ["*"]
+>           with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ConfigError not raised
+
+tests/test_engine.py:346: AssertionError
+_ ConfigValidationTests.test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope _
+
+self = <test_engine.ConfigValidationTests testMethod=test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope>
+
+    def test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cfg = base_config(root, root / "publisher.git", root / "source.git")
+            cfg["communication"]["issues"]["allowed_hosts"] = ["*"]
+>           with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ConfigError not raised
+
+tests/test_engine.py:368: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://example.invalid') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://docs.example') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://preview.test') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://example.com') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://docs.example.com') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://preview.example.org') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://127.0.0.1') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://192.0.2.10') _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
+
+    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for origin in (
+                "https://example.invalid", "https://docs.example", "https://preview.test",
+                "https://example.com", "https://docs.example.com", "https://preview.example.org",
+                "https://127.0.0.1", "https://192.0.2.10",
+            ):
+                cfg = base_config(root, root / "publisher.git", root / "source.git")
+                cfg["site"]["base_url"] = origin
+                cfg["publishing"]["dry_run"] = False
+>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: ConfigError not raised
+
+tests/test_engine.py:389: AssertionError
+_ ConfigValidationTests.test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real _
+
+self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real>
+
+    def test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cfg = base_config(root, root / "publisher.git", root / "source.git")
+            cfg["site"]["base_url"] = "https://docs.example.org"
+            cfg["site"]["canonical_base_url"] = "https://example.invalid"
+            cfg["publishing"]["dry_run"] = False
+>           with self.assertRaisesRegex(ConfigError, "site.canonical_base_url"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ConfigError not raised
+
+tests/test_engine.py:399: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_engine.py::ConfigValidationTests::test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts - AssertionError: ConfigError not raised
+FAILED tests/test_engine.py::ConfigValidationTests::test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://example.invalid') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://docs.example') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://preview.test') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://example.com') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://docs.example.com') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://preview.example.org') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://127.0.0.1') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+SUBFAILED(origin='https://192.0.2.10') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
+FAILED tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real - AssertionError: ConfigError not raised
+11 failed, 1 passed in 1.41s

@@ -1,0 +1,12 @@
+STRICT_JSON=PASS
+ACTIVE_DISCOVERY_PATH=.devcontainer/devcontainer.json
+DOCKERFILE_BASE_IMAGE=mcr.microsoft.com/devcontainers/python:3.13-bookworm
+JAVA_FEATURE=25 default + 21 additional, Temurin, Maven
+GIT_LFS_FEATURE=enabled, autoPull=false
+GIT_SUBTREE=installed in Dockerfile; same-path guard present
+POST_CREATE=venv bootstrap; waits before readiness
+POST_START=environment verification
+EXAMPLE_ONLY_CONFIG=ABSENT
+LOCAL_FEATURE_INSTALLER=ABSENT
+BASH_SYNTAX=PASS
+PYTHON_COMPILE=PASS

@@ -1,0 +1,14 @@
+P8 baseline Git-LFS include path:
+  actual: --include=vendor/generated-docs/**
+  expected source-relative: --include=manuals/en/**
+P9 baseline plan selection:
+  selected: ['guide-b']
+  sources: ['source-a', 'source-b', 'unused']
+  tasks: ['prepare-a', 'build-a', 'prepare-b', 'build-b']
+  expected component closure: guide-a, guide-b; required sources only source-a, source-b
+P10 baseline ZIP preflight:
+  outcome: AssertionError infolist materialized before max_files limit
+P11 baseline subprocess capture / child process:
+  unbounded captured bytes: {'stdout': 4194304, 'stderr': 4194304}
+  parent timeout reported: True
+  descendant survived parent timeout: True

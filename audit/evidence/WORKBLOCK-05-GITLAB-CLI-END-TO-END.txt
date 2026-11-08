@@ -1,0 +1,14 @@
+Command: python -m publisher_engine.cli validate-config --config .tmp-workblock05-gitlab-config.yml
+Output: Configuration valid: 1 source(s), 1 component(s), 1 task(s)
+Result: PASS
+
+Command: python -m publisher_engine.cli generate-workflow --config .tmp-workblock05-gitlab-config.yml
+Output: Workflow generated: .gitlab-ci.yml
+Result: PASS
+
+The temporary config was derived from the checked-in Keycloak smoke fixture by adding:
+- workflow.provider: gitlab_ci
+- workflow.container_image: registry.example.invalid/publisher/python@sha256:<64 hex characters>
+- workflow.python_version: 3.13
+
+The generated .gitlab-ci.yml was parsed with a duplicate-key-rejecting YAML loader. The digest-pinned default image and validate-config/build-site jobs were present; the Pages deploy job was absent because publishing.dry_run was true. The generated file and temporary config were removed after inspection.

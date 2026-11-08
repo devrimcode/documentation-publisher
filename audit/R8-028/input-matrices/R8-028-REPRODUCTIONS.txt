@@ -1,0 +1,12 @@
+[PASS] generic_template_fails_closed: expected=1; actual=1
+       ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
+[PASS] keycloak_smoke_config_currently_validates: expected=0; actual=0
+       Configuration valid: 1 source(s), 1 component(s), 1 task(s)
+[PASS] default_config_absent_on_clean_candidate: expected=1; actual=1
+       ERROR: Cannot read configuration /mnt/data/recovery/verify_p11_zip_final/documentation-publisher-v2/publisher.yml: [Errno 2] No such file or directory: '/mnt/data/recovery/verify_p11_zip_final/documentation-publisher-v2/publisher.yml'
+[PASS] arbitrary_hosts_accepted_when_example_wildcards_retained: expected=True; actual=True
+       publisher=https://mirror.evil.invalid/org/publisher.git allowed_hosts=['*']; source=https://source.evil.invalid/org/source.git allowed_hosts=['*']
+[PASS] environment_interpolation_is_field_selective: expected=True; actual=True
+       {'site.base_url': 'https://resolved.example.invalid', 'components[].output_path': '${R8_AUDIT_OUTPUT_DIR}', 'build_tasks[].argv[0]': '${R8_AUDIT_EXECUTABLE}', 'workflow.file': '${R8_AUDIT_WORKFLOW_FILE}'}
+[PASS] root_gitignore_exists: expected=False; actual=False
+SUMMARY: 6/6 reproductions matched expected observations

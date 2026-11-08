@@ -1,0 +1,42 @@
+name: Notify Documentation Publisher
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  notify-publisher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch source revision to Documentation Publisher
+        env:
+          PUBLISHER_DISPATCH_TOKEN: ${{ secrets.PUBLISHER_DISPATCH_TOKEN }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_REF: ${{ github.ref }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${PUBLISHER_DISPATCH_TOKEN:?Repository secret PUBLISHER_DISPATCH_TOKEN is required}"
+          if [[ "$SOURCE_REPOSITORY" != "devrimcode/keycloak" || "$SOURCE_REF" != "refs/heads/main" ]]; then
+            echo "Unexpected source event: $SOURCE_REPOSITORY $SOURCE_REF" >&2
+            exit 1
+          fi
+          payload="$(jq -n \
+            --arg repository "$SOURCE_REPOSITORY" \
+            --arg ref "$SOURCE_REF" \
+            --arg sha "$SOURCE_SHA" \
+            '{event_type:"keycloak-documentation-updated",client_payload:{repository:$repository,ref:$ref,sha:$sha}}')"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${PUBLISHER_DISPATCH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2026-03-10" \
+            --header "Content-Type: application/json" \
+            --data "$payload" \
+            https://api.github.com/repos/devrimcode/documentation-publisher/dispatches

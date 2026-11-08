@@ -1,0 +1,147 @@
+DOCUMENTATION PUBLISHER — CODESPACES ACCEPTANCE
+UTC: 20261107T110757Z
+Project: /mnt/data/work-p11/documentation-publisher-v2
+Platform: Linux-6.18.57-x86_64-with-glibc2.41
+Python: 3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]
+GIT_EXEC_PATH: <unset>
+Python version contract: PASS (3.13)
+
+=== Test dependencies ===
+$ /opt/pyvenv/bin/python -c import yaml, pytest, importlib.metadata as m; print('PyYAML', m.version('PyYAML')); print('jsonschema', m.version('jsonschema')); print('pytest', pytest.__version__)
+PyYAML 6.0.3
+jsonschema 4.26.0
+pytest 9.0.2
+RESULT: PASS (exit 0)
+
+=== Git version ===
+$ git --version
+git version 2.47.3
+RESULT: PASS (exit 0)
+
+=== Git exec path ===
+$ git --exec-path
+/usr/lib/git-core
+RESULT: PASS (exit 0)
+
+=== Git subtree discovery in this exact environment ===
+$ git subtree -h
+usage: git subtree add   --prefix=<prefix> <commit>
+   or: git subtree add   --prefix=<prefix> <repository> <ref>
+   or: git subtree merge --prefix=<prefix> <commit>
+   or: git subtree split --prefix=<prefix> [<commit>]
+   or: git subtree pull  --prefix=<prefix> <repository> <ref>
+   or: git subtree push  --prefix=<prefix> <repository> <refspec>
+
+    -h, --help            show the help
+    -q, --quiet           quiet
+    -d, --debug           show debug messages
+    -P, --[no-]prefix ... the name of the subdir to split out
+
+options for 'split' (also: 'push')
+    --[no-]annotate ...   add a prefix to commit message of new commits
+    -b, --branch ...      create a new branch from the split subtree
+    --[no-]ignore-joins   ignore prior --rejoin commits
+    --[no-]onto ...       try connecting new tree to an existing one
+    --[no-]rejoin         merge the new branch back into HEAD
+
+options for 'add' and 'merge' (also: 'pull', 'split --rejoin', and 'push --rejoin')
+    --[no-]squash         merge subtree changes as a single commit
+    -m, --message ...     use the given message as the commit message for the merge commit
+RESULT: PASS (exit 129)
+
+=== Git LFS version ===
+$ git lfs version
+git: 'lfs' is not a git command. See 'git --help'.
+
+The most similar command is
+	refs
+RESULT: FAIL (exit 1)
+
+=== Active Java runtime (must be 25) ===
+$ java -version
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
+RESULT: PASS (exit 0)
+RESULT DETAIL: FAIL (Java 25 must be active; Java 21 is additional only)
+
+=== Additional JDK 21 ===
+No SDKMAN Java 21 candidate directory found
+RESULT: FAIL
+
+=== Maven version ===
+$ mvn --version
+RESULT: FAIL (FileNotFoundError: [Errno 2] No such file or directory: 'mvn')
+
+=== Python compilation ===
+$ /opt/pyvenv/bin/python -m compileall -q publisher_engine tests scripts
+RESULT: PASS (exit 0)
+
+=== CLI version ===
+$ /opt/pyvenv/bin/python -m publisher_engine.cli --version
+2.0.10-dev
+RESULT: PASS (exit 0)
+
+=== Generic config template must fail closed ===
+$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.example.yml
+ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
+RESULT: PASS (exit 1)
+
+=== Keycloak smoke config validation ===
+$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml
+Configuration valid: 1 source(s), 1 component(s), 1 task(s)
+RESULT: PASS (exit 0)
+
+=== Keycloak smoke component plan ===
+$ /opt/pyvenv/bin/python -m publisher_engine.cli plan --config publisher.keycloak.smoke.yml --components keycloak-docs
+{
+  "project": {
+    "id": "documentation-project",
+    "title": "Documentation Project",
+    "description": "Published documentation",
+    "locale": "en",
+    "timezone": "UTC",
+    "license": "",
+    "copyright": "",
+    "logo": "",
+    "favicon": "",
+    "homepage_url": "",
+    "repository_url": "",
+    "maintainers": []
+  },
+  "selection": [
+    "keycloak-docs"
+  ],
+  "components": [
+    {
+      "id": "keycloak-docs",
+      "route": "keycloak",
+      "tasks": [
+        "build-keycloak-docs"
+      ],
+      "dependencies": []
+    }
+  ],
+  "sources": [
+    {
+      "id": "keycloak",
+      "mode": "git_subtree",
+      "prefix": ".publisher-sources/keycloak",
+      "ref": "main"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "build-keycloak-docs",
+      "source_id": "keycloak",
+      "depends_on": []
+    }
+  ]
+}
+RESULT: PASS (exit 0)
+
+=== Summary ===
+Failed/blocked checks: 4
+Git exec path observed: /usr/lib/git-core
+Git subtree discovery: PASS
+Interpretation: this report tests the extracted candidate against the current container; it does not deploy, push, modify the remote, or alter the existing checkout.

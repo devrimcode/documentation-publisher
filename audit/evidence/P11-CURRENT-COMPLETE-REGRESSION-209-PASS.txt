@@ -1,0 +1,31 @@
+Documentation Publisher 2.0.10-dev — current regression evidence
+Date: 2026-11-07 (after active Codespaces config, Dockerfile helper guard, and shell test-runner regression)
+
+The verified regression is intentionally run in separate invocations.
+
+Command 1:
+  python -m pytest -q --ignore=tests/test_process.py
+Result:
+  203 passed, 1 skipped, 53 subtests passed in 27.53s
+
+Command 2:
+  python -Werror::ResourceWarning -m pytest -q tests/test_process.py
+Result:
+  6 passed in 9.47s
+
+Command 3:
+  python -m unittest tests.test_devcontainer_config -v
+Result:
+  9 passed
+
+Count interpretation:
+- The 203-test main suite includes all 9 active Codespaces/Dev Container tests.
+- The 6 process tests are excluded from command 1 and added separately.
+- The 9 Dev Container tests are a subset of the 203 main-suite tests; do not add them again.
+- Aggregated full regression: 209 passed, 1 skipped, 0 failed.
+
+The single skipped test is the real Git-LFS object transfer, which still needs a real LFS client
+and batch/object server fixture. Source-relative LFS argument tests pass.
+
+The Dev Container static config tests do not constitute an image build. No Docker/Podman build or
+live GitHub Codespaces creation was performed in this execution environment.

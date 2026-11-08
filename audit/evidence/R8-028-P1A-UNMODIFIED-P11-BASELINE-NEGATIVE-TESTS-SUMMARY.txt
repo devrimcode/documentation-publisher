@@ -1,0 +1,20 @@
+Differential regression against the unmodified P11 source archive
+
+Baseline: documentation-publisher-v2-r8-2.0.10-dev-P11-ACTIVE-DEVCONTAINER.zip
+SHA-256: a35bcfe52c130a8505422806f58fc429f7bbad8b0fbcae1d89722d35ba212936
+
+The four new regression methods were copied into a fresh extraction of the unmodified
+baseline; no production code was changed in that extraction.
+
+Command: pytest -q for the four selected tests:
+- repository allowlist rejects wildcard hosts
+- communication allowlist rejects wildcard hosts globally and per component
+- live publishing rejects reserved/example/test/non-global IP origins
+- live publishing rejects a reserved canonical origin
+
+Observed baseline result: 11 expected assertion failures/subfailures and 1 passing control
+(Dry-Run reserved-origin behavior). The baseline accepted wildcard allowlists and reserved
+origins in live mode, proving these tests detect the pre-correction behavior.
+
+Full raw traceback/output: R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt
+Current P12/P1A targeted result: 48/48 pass, and the main regression suite remains green.

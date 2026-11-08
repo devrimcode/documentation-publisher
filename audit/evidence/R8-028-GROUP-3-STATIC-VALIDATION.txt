@@ -1,0 +1,4 @@
+Python compileall: PASS
+Shell syntax: PASS
+JSON Schema Draft 2020-12 meta-validation: PASS
+Root/package schema and template parity: PASS

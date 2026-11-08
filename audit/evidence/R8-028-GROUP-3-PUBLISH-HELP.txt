@@ -1,0 +1,9 @@
+usage: documentation-publisher publish [-h] [--config CONFIG]
+                                       [--profile PROFILE] [--site SITE]
+
+options:
+  -h, --help         show this help message and exit
+  --config CONFIG
+  --profile PROFILE  Apply a named profile (may be repeated; order is
+                     significant)
+  --site SITE

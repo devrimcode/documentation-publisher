@@ -1,0 +1,1 @@
+devcontainer.json and publisher.schema.json strict JSON: PASS

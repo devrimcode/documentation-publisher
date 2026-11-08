@@ -1,0 +1,17 @@
+Final Group 2 archive integrity and fresh-extraction acceptance
+
+ZIP and TAR.GZ have identical 167-file project trees.
+The internal PROJECT-MANIFEST.SHA256 had 167 entries; every entry matched in each fresh extraction.
+ZIP central-directory CRC test: PASS.
+TAR member path safety test: PASS.
+External SHA-256 values for both archive files matched the delivery checksum file.
+
+Fresh ZIP extraction:
+- Main regression: 232 passed, 1 skipped, 0 failed; 81 subtests.
+- Process regression, ResourceWarning treated as error: 6 passed, 0 failed.
+
+Fresh TAR.GZ extraction:
+- Main regression: 232 passed, 1 skipped, 0 failed; 81 subtests.
+- Process regression, ResourceWarning treated as error: 6 passed, 0 failed.
+
+The one skipped test is the real Git-LFS object transfer acceptance, because no git-lfs executable is available in the test environment. Windows process-tree acceptance and real GitHub Codespaces/Docker/browser/provider acceptance were not performed.

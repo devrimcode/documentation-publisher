@@ -1,0 +1,6 @@
+compileall=PASS
+json-schema=PASS
+package-resource-parity=PASS
+registry-json=PASS
+bash-n=PASS
+keycloak-smoke-config=PASS

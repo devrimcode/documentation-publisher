@@ -1,0 +1,89 @@
+F...FFFF.FF...F                                                          [100%]
+=================================== FAILURES ===================================
+_ WorkflowEnvironmentAndPathFiltersTests.test_p4_environment_is_available_to_validate_and_build_steps _
+tests/test_p4_p5_workflow.py:43: in test_p4_environment_is_available_to_validate_and_build_steps
+    self.assertEqual(validate["env"]["DOCS_CHANNEL"], "preview")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'DOCS_CHANNEL'
+_ WorkflowEnvironmentAndPathFiltersTests.test_p5_only_negative_patterns_become_paths_ignore _
+tests/test_p4_p5_workflow.py:94: in test_p5_only_negative_patterns_become_paths_ignore
+    self.assertEqual(events["push"]["paths-ignore"], expected)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'paths-ignore'
+_ WorkflowEnvironmentAndPathFiltersTests.test_p5_paths_apply_to_both_push_and_pull_request _
+tests/test_p4_p5_workflow.py:67: in test_p5_paths_apply_to_both_push_and_pull_request
+    self.assertEqual(events["pull_request"]["paths"], ["docs/**", "!docs/private/**", "publisher.yml"])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ WorkflowEnvironmentAndPathFiltersTests.test_p5_paths_without_path_aware_trigger_are_rejected _
+tests/test_p4_p5_workflow.py:99: in test_p5_paths_without_path_aware_trigger_are_rejected
+    with self.assertRaisesRegex(WorkflowError, "requires at least one"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: WorkflowError not raised
+_ WorkflowEnvironmentAndPathFiltersTests.test_p5_pull_request_path_filter_works_without_push _
+tests/test_p4_p5_workflow.py:78: in test_p5_pull_request_path_filter_works_without_push
+    self.assertEqual(events["pull_request"]["paths"], ["docs/**"])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ManifestAndCleanupAcceptanceTests.test_p6_explicit_required_manifest_is_created_when_manifest_validation_is_disabled _
+tests/test_p6_p7_manifest_cleanup.py:67: in test_p6_explicit_required_manifest_is_created_when_manifest_validation_is_disabled
+    result = build(path, selected_ids=["guide"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+publisher_engine/engine.py:1290: in build
+    return _build_loaded(config_path, config, selected_ids=selected_ids,
+publisher_engine/engine.py:1444: in _build_loaded
+    raise BuildError("Site validation failed:\n" + "\n".join(f" - {x}" for x in errors[:100]))
+E   publisher_engine.engine.BuildError: Site validation failed:
+E    - Required output file missing: build-manifest.json
+_ ManifestAndCleanupAcceptanceTests.test_p6_final_manifest_counts_itself_exactly _
+tests/test_p6_p7_manifest_cleanup.py:38: in test_p6_final_manifest_counts_itself_exactly
+    self.assertEqual(manifest["site_bytes"], sum(item.stat().st_size for item in actual_files))
+E   AssertionError: 1490 != 2688
+_ ManifestAndCleanupAcceptanceTests.test_p7_nonfatal_success_cleanup_error_keeps_site_and_is_recorded _
+tests/test_p6_p7_manifest_cleanup.py:79: in test_p7_nonfatal_success_cleanup_error_keeps_site_and_is_recorded
+    result = build(path, selected_ids=["guide"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+publisher_engine/engine.py:1290: in build
+    return _build_loaded(config_path, config, selected_ids=selected_ids,
+publisher_engine/engine.py:1477: in _build_loaded
+    _remove_tree_strict(staging, config["workspace"].get("cleanup_retries", 1),
+/usr/lib/python3.13/unittest/mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1228: in _execute_mock_call
+    raise effect
+publisher_engine/engine.py:1471: in _build_loaded
+    _remove_tree_strict(run_root, config["workspace"].get("cleanup_retries", 1),
+/usr/lib/python3.13/unittest/mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1228: in _execute_mock_call
+    raise effect
+publisher_engine/engine.py:1459: in _build_loaded
+    _remove_tree_strict(run_root, config["workspace"].get("cleanup_retries", 1),
+/usr/lib/python3.13/unittest/mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/unittest/mock.py:1228: in _execute_mock_call
+    raise effect
+E   OSError: injected cleanup fault
+=========================== short test summary info ============================
+FAILED tests/test_p4_p5_workflow.py::WorkflowEnvironmentAndPathFiltersTests::test_p4_environment_is_available_to_validate_and_build_steps - KeyError: 'DOCS_CHANNEL'
+FAILED tests/test_p4_p5_workflow.py::WorkflowEnvironmentAndPathFiltersTests::test_p5_only_negative_patterns_become_paths_ignore - KeyError: 'paths-ignore'
+FAILED tests/test_p4_p5_workflow.py::WorkflowEnvironmentAndPathFiltersTests::test_p5_paths_apply_to_both_push_and_pull_request - TypeError: 'NoneType' object is not subscriptable
+FAILED tests/test_p4_p5_workflow.py::WorkflowEnvironmentAndPathFiltersTests::test_p5_paths_without_path_aware_trigger_are_rejected - AssertionError: WorkflowError not raised
+FAILED tests/test_p4_p5_workflow.py::WorkflowEnvironmentAndPathFiltersTests::test_p5_pull_request_path_filter_works_without_push - TypeError: 'NoneType' object is not subscriptable
+FAILED tests/test_p6_p7_manifest_cleanup.py::ManifestAndCleanupAcceptanceTests::test_p6_explicit_required_manifest_is_created_when_manifest_validation_is_disabled - publisher_engine.engine.BuildError: Site validation failed:
+ - Required output file missing: build-manifest.json
+FAILED tests/test_p6_p7_manifest_cleanup.py::ManifestAndCleanupAcceptanceTests::test_p6_final_manifest_counts_itself_exactly - AssertionError: 1490 != 2688
+FAILED tests/test_p6_p7_manifest_cleanup.py::ManifestAndCleanupAcceptanceTests::test_p7_nonfatal_success_cleanup_error_keeps_site_and_is_recorded - OSError: injected cleanup fault
+8 failed, 7 passed in 6.89s

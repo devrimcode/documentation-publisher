@@ -1,0 +1,135 @@
+file,line,pattern,text,interpretation
+publisher.example.yml,22,ANGLE_PLACEHOLDER,clone_url: <PUBLISHER_GIT_CLONE_URL>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,23,ANGLE_PLACEHOLDER,ref: <PUBLISHER_BUILD_REF>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,35,ANGLE_PLACEHOLDER,clone_url: <BUILD_SOURCE_GIT_URL>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,36,ANGLE_PLACEHOLDER,default_ref: <BUILD_SOURCE_REF>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,57,ANGLE_PLACEHOLDER,web_url: <AUTHORING_REPOSITORY_WEB_URL>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,58,ANGLE_PLACEHOLDER,repository: <AUTHORING_REPOSITORY_IDENTIFIER>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,59,ANGLE_PLACEHOLDER,ref: <AUTHORING_REF>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,64,ANGLE_PLACEHOLDER,source_prefix: <SOURCE_DOCUMENTATION_ROOT>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,65,ANGLE_PLACEHOLDER,target_prefix: <AUTHORING_DOCUMENTATION_ROOT>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,78,ANGLE_PLACEHOLDER,- <BUILD_EXECUTABLE>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,79,ANGLE_PLACEHOLDER,- <BUILD_ARGUMENT_1>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,80,ANGLE_PLACEHOLDER,- <BUILD_ARGUMENT_2>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,90,ANGLE_PLACEHOLDER,- <GENERATED_OUTPUT_DIRECTORY>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,100,ANGLE_PLACEHOLDER,output_path: <GENERATED_OUTPUT_DIRECTORY>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,108,ANGLE_PLACEHOLDER,url: <ORIGINAL_COMPONENT_DEFAULT_URL>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,122,ANGLE_PLACEHOLDER,base_url: <PUBLIC_SITE_BASE_URL>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,123,ANGLE_PLACEHOLDER,base_path: <PUBLIC_SITE_BASE_PATH>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,194,RESERVED_EXAMPLE_DOMAIN,git_user_email: documentation-publisher@example.invalid,Synthetic local Git identity for temporary subtree commit; not a public endpoint.
+publisher.example.yml,220,ANGLE_PLACEHOLDER,push_branches: [<PUBLISHER_DEPLOY_BRANCH>],Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,227,ANGLE_PLACEHOLDER,deploy_branch: <PUBLISHER_DEPLOY_BRANCH>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,251,ANGLE_PLACEHOLDER,checkout: <ACTIONS_CHECKOUT_FULL_COMMIT_SHA>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,252,ANGLE_PLACEHOLDER,setup_python: <ACTIONS_SETUP_PYTHON_FULL_COMMIT_SHA>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,253,ANGLE_PLACEHOLDER,upload_pages_artifact: <ACTIONS_UPLOAD_PAGES_ARTIFACT_FULL_COMMIT_SHA>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.example.yml,254,ANGLE_PLACEHOLDER,deploy_pages: <ACTIONS_DEPLOY_PAGES_FULL_COMMIT_SHA>,Intentional generic-template placeholder; expected to fail config validation.
+publisher.keycloak.example.yml,132,RESERVED_EXAMPLE_DOMAIN,base_url: https://example.invalid,Reserved public site origin in a valid smoke config; validate-config currently accepts it.
+publisher.keycloak.example.yml,207,RESERVED_EXAMPLE_DOMAIN,git_user_email: documentation-publisher@example.invalid,Test fixture or example-only host.
+.devcontainer/devcontainer.json,31,ENV_EXPRESSION,"""python.defaultInterpreterPath"": ""${workspaceFolder}/.venv/bin/python"",",Environment/template expression; interpretation depends on field and phase.
+schemas/publisher.schema.json,3,RESERVED_EXAMPLE_DOMAIN,"""$id"": ""https://example.invalid/documentation-publisher/v2/schema.json"",",Schema identifier/meta URI only; not a runtime public site URL.
+tests/test_p2_meta_refresh.py,24,RESERVED_EXAMPLE_DOMAIN,"self.cfg[""validation""][""allowed_external_hosts""] = [""trusted.example.invalid""]",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,43,RESERVED_EXAMPLE_DOMAIN,"errors = self.page('<html><head><meta http-equiv=""refresh"" content=""0; URL=http://legacy.example.invalid/""></head></html>')",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,44,RESERVED_EXAMPLE_DOMAIN,"self.assertTrue(any(""scheme"" in e.lower() and ""http://legacy.example.invalid/"" in e for e in errors), errors)",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,48,RESERVED_EXAMPLE_DOMAIN,"errors = self.page('<html><head><meta http-equiv=""refresh"" content=""0;url=https://evil.example.invalid/landing""></head></html>')",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,49,RESERVED_EXAMPLE_DOMAIN,"self.assertTrue(any(""External host is not allowed"" in e and ""evil.example.invalid"" in e for e in errors), errors)",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,72,RESERVED_EXAMPLE_DOMAIN,"errors = self.page('<meta content=""2; URL=\'https://trusted.example.invalid/landing?x=1&amp;y=2\'"" HTTP-EQUIV=""Refresh"">')",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,76,RESERVED_EXAMPLE_DOMAIN,"errors = self.page('<meta http-equiv=""refresh"" content=""0;url=mailto:docs@example.invalid"">')",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,85,RESERVED_EXAMPLE_DOMAIN,"errors = self.page('<meta http-equiv=""refresh"" content=""0; url=//evil.example.invalid/landing"">')",Test fixture or example-only host.
+tests/test_p2_meta_refresh.py,86,RESERVED_EXAMPLE_DOMAIN,"self.assertTrue(any(""External host is not allowed"" in e and ""evil.example.invalid"" in e for e in errors), errors)",Test fixture or example-only host.
+tests/test_engine.py,77,RESERVED_EXAMPLE_DOMAIN,"git([""config"", ""user.email"", ""fixture@example.invalid""], work)",Test fixture or example-only host.
+tests/test_engine.py,96,RESERVED_EXAMPLE_DOMAIN,"""<a class=\\\""publisher-link-email\\\"" href=\\\""mailto:old@example.invalid\\\"">Email</a>""",Test fixture or example-only host.
+tests/test_engine.py,108,RESERVED_EXAMPLE_DOMAIN,"""id"": ""authoring"", ""provider"": ""generic"", ""web_url"": ""https://authoring.example.invalid/project"",",Test fixture or example-only host.
+tests/test_engine.py,122,RESERVED_EXAMPLE_DOMAIN,"""fallback"": {""mode"": ""redirect"", ""url"": ""https://original.example.invalid/guide/""}},",Test fixture or example-only host.
+tests/test_engine.py,125,RESERVED_EXAMPLE_DOMAIN,"""fallback"": {""mode"": ""redirect"", ""url"": ""https://original.example.invalid/other/""}}",Test fixture or example-only host.
+tests/test_engine.py,127,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_url"": ""https://docs.example.invalid"", ""base_path"": ""/project"", ""output_directory"": ""_site"", ""components_root"": ""docs"", ""version"": ""v1"", ""generate_index"": True, ""robots"": ""noindex""},",Test fixture or example-only host.
+tests/test_engine.py,130,RESERVED_EXAMPLE_DOMAIN,"""issues"": {""mode"": ""override"", ""url_template"": ""https://issues.example.invalid/new?title={page_title}""},",Test fixture or example-only host.
+tests/test_engine.py,131,RESERVED_EXAMPLE_DOMAIN,"""email"": {""mode"": ""override"", ""address"": ""docs@example.invalid"", ""subject"": ""Feedback: {page_title}"", ""body"": ""Page: {page_url}""}",Test fixture or example-only host.
+tests/test_engine.py,136,RESERVED_EXAMPLE_DOMAIN,"""workspace"": {""temp_root"": str(tmp / ""runs""), ""git_user_name"": ""Publisher Fixture"", ""git_user_email"": ""publisher@example.invalid"",",Test fixture or example-only host.
+tests/test_engine.py,146,RESERVED_EXAMPLE_DOMAIN,"""id"": ""a"", ""web_url"": ""https://edit.example.invalid/repo"", ""ref"": ""docs"",",Test fixture or example-only host.
+tests/test_engine.py,152,RESERVED_EXAMPLE_DOMAIN,"""https://edit.example.invalid/repo/edit/docs/content/guide.adoc""",Test fixture or example-only host.
+tests/test_engine.py,158,RESERVED_EXAMPLE_DOMAIN,"email = build_communication_url(""email"", {""address"": ""team@example.invalid"", ""subject"": ""About {page_title}"", ""body"": ""See {page_url}""}, {""page_title"": ""Guide"", ""page_url"": ""https://docs.invalid/guide""})",Test fixture or example-only host.
+tests/test_engine.py,159,RESERVED_EXAMPLE_DOMAIN,"self.assertTrue(email.startswith(""mailto:team@example.invalid?""))",Test fixture or example-only host.
+tests/test_engine.py,267,ENV_EXPRESSION,"cfg[""project""][""homepage_url""] = ""https://${DOCS_HOST}/""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,268,ENV_EXPRESSION,"cfg[""publisher""][""clone_url""] = ""https://${DOCS_HOST}/publisher.git""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,269,ENV_EXPRESSION,"cfg[""publisher""][""ref""] = ""${PUBLISHER_REF}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,270,ENV_EXPRESSION,"cfg[""sources""][0][""vcs""][""clone_url""] = ""https://${DOCS_HOST}/source.git""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,271,ENV_EXPRESSION,"cfg[""sources""][0][""vcs""][""default_ref""] = ""${SOURCE_REF}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,272,ENV_EXPRESSION,"cfg[""authoring_targets""][0][""web_url""] = ""https://${DOCS_HOST}/authoring""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,273,ENV_EXPRESSION,"cfg[""site""][""base_path""] = ""/${SITE_BASE_PATH}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,274,ENV_EXPRESSION,"cfg[""site""][""output_directory""] = ""${SITE_OUTPUT}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,275,ENV_EXPRESSION,"cfg[""publishing_targets""][0][""output_path""] = ""${SITE_OUTPUT}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,276,ENV_EXPRESSION,"cfg[""workspace""][""temp_root""] = ""${WORK_ROOT}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,277,ENV_EXPRESSION,"cfg[""communication""][""email""][""address""] = ""${DOCS_EMAIL}""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,278,ENV_EXPRESSION,"cfg[""communication""][""email""][""cc""] = [""${DOCS_CC}""]",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,280,ENV_EXPRESSION,"cfg[""build_tasks""][0][""environment""] = {""API_TOKEN"": ""${BUILD_SECRET}""}",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,281,ENV_EXPRESSION,"cfg[""workflow""] = {""environment"": {""PUBLIC_LABEL"": ""${DOCS_HOST}""}}",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,285,RESERVED_EXAMPLE_DOMAIN,"""DOCS_HOST"": ""docs.example.invalid"", ""PUBLISHER_REF"": ""release"",",Test fixture or example-only host.
+tests/test_engine.py,287,RESERVED_EXAMPLE_DOMAIN,"""WORK_ROOT"": str(root / ""runs-from-env""), ""DOCS_EMAIL"": ""docs@example.invalid"",",Test fixture or example-only host.
+tests/test_engine.py,288,RESERVED_EXAMPLE_DOMAIN,"""DOCS_CC"": ""review@example.invalid"", ""BUILD_SECRET"": ""never-copy-this-secret"",",Test fixture or example-only host.
+tests/test_engine.py,292,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(loaded[""project""][""homepage_url""], ""https://docs.example.invalid/"")",Test fixture or example-only host.
+tests/test_engine.py,293,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(loaded[""publisher""][""clone_url""], ""https://docs.example.invalid/publisher.git"")",Test fixture or example-only host.
+tests/test_engine.py,296,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(loaded[""authoring_targets""][0][""web_url""], ""https://docs.example.invalid/authoring"")",Test fixture or example-only host.
+tests/test_engine.py,300,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(loaded[""communication""][""email""][""address""], ""docs@example.invalid"")",Test fixture or example-only host.
+tests/test_engine.py,301,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(loaded[""communication""][""email""][""cc""], [""review@example.invalid""])",Test fixture or example-only host.
+tests/test_engine.py,302,ENV_EXPRESSION,"self.assertEqual(loaded[""build_tasks""][0][""environment""][""API_TOKEN""], ""${BUILD_SECRET}"")",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,303,ENV_EXPRESSION,"self.assertEqual(loaded[""workflow""][""environment""][""PUBLIC_LABEL""], ""${DOCS_HOST}"")",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,309,ENV_EXPRESSION,"cfg[""project""][""homepage_url""] = ""https://${DOC_PUBLISHER_TEST_MISSING_HOST}/""",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,317,ENV_EXPRESSION,"self.assertEqual(loaded[""project""][""homepage_url""], ""https://${DOC_PUBLISHER_TEST_MISSING_HOST}/"")",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,336,ANGLE_PLACEHOLDER,"cfg = {""schema_version"":2, ""publisher"":{""clone_url"":""<URL>""}}",Intentional generic-template placeholder; expected to fail config validation.
+tests/test_engine.py,344,RESERVED_EXAMPLE_DOMAIN,"""mode"": ""override"", ""url_template"": ""https://public.example.invalid/issues/new"",",Test fixture or example-only host.
+tests/test_engine.py,514,ENV_EXPRESSION,"""environment"": {""TOKEN"": ""${MISSING_TOKEN}""}}]",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,525,ENV_EXPRESSION,"cfg[""build_tasks""][0][""environment""] = {""TOKEN"": ""${NOT_ALLOWLISTED}""}",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,561,ENV_EXPRESSION,"cfg[""build_tasks""][0][""environment""] = {""API_TOKEN"": ""${GH_PAT}""}",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,584,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_path"": """", ""base_url"": ""https://example.invalid""}}",Test fixture or example-only host.
+tests/test_engine.py,655,RESERVED_EXAMPLE_DOMAIN,"'<a href=""https://blocked.example.invalid/docs"">external</a>', encoding=""utf-8""",Test fixture or example-only host.
+tests/test_engine.py,661,RESERVED_EXAMPLE_DOMAIN,"""allowed_external_hosts"": [""allowed.example.invalid""],",Test fixture or example-only host.
+tests/test_engine.py,692,RESERVED_EXAMPLE_DOMAIN,"'@import url(""https://blocked.example.invalid/remote.css"");', encoding=""utf-8""",Test fixture or example-only host.
+tests/test_engine.py,699,RESERVED_EXAMPLE_DOMAIN,"""allowed_external_hosts"": [""allowed.example.invalid""],",Test fixture or example-only host.
+tests/test_engine.py,926,RESERVED_EXAMPLE_DOMAIN,"""<a class=\\\""publisher-link-email\\\"" href=\\\""mailto:old@example.invalid\\\"">Email</a>""",Test fixture or example-only host.
+tests/test_engine.py,946,RESERVED_EXAMPLE_DOMAIN,"self.assertIn('href=""https://docs.example.invalid/keycloak-pages/docs/v1/index.html""', version_index)",Test fixture or example-only host.
+tests/test_engine.py,963,RESERVED_EXAMPLE_DOMAIN,"self.assertIn(""https://authoring.example.invalid/project/edit/work/content/page.adoc"", page)",Test fixture or example-only host.
+tests/test_engine.py,964,RESERVED_EXAMPLE_DOMAIN,"self.assertIn(""https://issues.example.invalid/new?title=Example%20page"", page)",Test fixture or example-only host.
+tests/test_engine.py,965,RESERVED_EXAMPLE_DOMAIN,"self.assertIn(""mailto:docs@example.invalid?"", page)",Test fixture or example-only host.
+tests/test_engine.py,1426,ENV_EXPRESSION,"environment={""API_TOKEN"": ""${DEPLOY_TOKEN}""},",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,1443,ENV_EXPRESSION,"environment={""API_TOKEN"": ""${DEPLOY_TOKEN}""},",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,1530,ENV_EXPRESSION,"self.assertEqual(resolve_local_or_url(""${PUBLISHER_TEST_REPO}"", root), str(root / ""source.git""))",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,1533,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(resolve_local_or_url(""https://git.example.invalid/docs.git"", root),",Test fixture or example-only host.
+tests/test_engine.py,1534,RESERVED_EXAMPLE_DOMAIN,"""https://git.example.invalid/docs.git"")",Test fixture or example-only host.
+tests/test_engine.py,1536,RESERVED_EXAMPLE_DOMAIN,"""https://user:password@git.example.invalid/docs.git"",",Test fixture or example-only host.
+tests/test_engine.py,1537,RESERVED_EXAMPLE_DOMAIN,"""https://git.example.invalid/docs.git?token=abc"",",Test fixture or example-only host.
+tests/test_engine.py,1538,RESERVED_EXAMPLE_DOMAIN,"""https://git.example.invalid/docs.git#fragment"",",Test fixture or example-only host.
+tests/test_engine.py,1543,ENV_EXPRESSION,"resolve_local_or_url(""${PUBLISHER_MISSING_REPO}"", root)",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,1594,RESERVED_EXAMPLE_DOMAIN,"""vcs"": {""clone_url"": ""https://example.invalid/docs.git"", ""default_ref"": ""main"",",Test fixture or example-only host.
+tests/test_engine.py,1690,ENV_EXPRESSION,"environment={""API_KEY"": ""${BUILD_SECRET}""}, secret_environment=[""BUILD_SECRET""],",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,1704,ENV_EXPRESSION,"task = self._task([sys.executable, ""-c"", ""pass""], environment={""X"": ""${NOT_ALLOWED}""})",Environment/template expression; interpretation depends on field and phase.
+tests/test_engine.py,2203,RESERVED_EXAMPLE_DOMAIN,"git([""config"", ""user.email"", ""publisher-test@example.invalid""], root)",Test fixture or example-only host.
+tests/test_engine.py,2226,RESERVED_EXAMPLE_DOMAIN,"cfg[""components""][0][""fallback""] = {""mode"": ""redirect"", ""url"": ""http://legacy.example.invalid/""}",Test fixture or example-only host.
+tests/test_engine.py,2284,RESERVED_EXAMPLE_DOMAIN,"cfg[""site""][""base_url""] = ""https://docs.example.invalid"" + suffix",Test fixture or example-only host.
+tests/test_engine.py,2289,RESERVED_EXAMPLE_DOMAIN,"cfg = {""site"": {""base_url"": ""https://example.invalid"", ""base_path"": ""/keycloak-pages""}}",Test fixture or example-only host.
+tests/test_engine.py,2291,RESERVED_EXAMPLE_DOMAIN,"""https://example.invalid/keycloak-pages/docs/current/server_admin/index.html"")",Test fixture or example-only host.
+tests/test_engine.py,2294,RESERVED_EXAMPLE_DOMAIN,"cfg = {""site"": {""base_url"": ""https://org.github.io"", ""canonical_base_url"": ""https://docs.example.invalid"",",Test fixture or example-only host.
+tests/test_engine.py,2297,RESERVED_EXAMPLE_DOMAIN,"""https://docs.example.invalid/keycloak-pages/docs/current/index.html"")",Test fixture or example-only host.
+tests/test_engine.py,2317,RESERVED_EXAMPLE_DOMAIN,"'<a href=""//cdn.example.invalid/lib.js"">CDN</a> <a href=""../relative.html"">Relative</a>\n'",Test fixture or example-only host.
+tests/test_engine.py,2325,RESERVED_EXAMPLE_DOMAIN,"'.external{background:url(https://cdn.example.invalid/x.png)}', encoding=""utf-8"")",Test fixture or example-only host.
+tests/test_engine.py,2326,RESERVED_EXAMPLE_DOMAIN,"cfg = {""site"": {""base_url"": ""https://example.invalid"", ""base_path"": ""/keycloak-pages""}}",Test fixture or example-only host.
+tests/test_engine.py,2347,RESERVED_EXAMPLE_DOMAIN,"'href=""//cdn.example.invalid/lib.js""',",Test fixture or example-only host.
+tests/test_engine.py,2356,RESERVED_EXAMPLE_DOMAIN,"self.assertIn('url(https://cdn.example.invalid/x.png)', css)",Test fixture or example-only host.
+tests/test_engine.py,2371,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(_rewrite_root_relative_site_urls(root, {""site"": {""base_url"": ""https://docs.example.invalid"", ""base_path"": """"}}), 0)",Test fixture or example-only host.
+tests/test_engine.py,2391,RESERVED_EXAMPLE_DOMAIN,"""url_template"": ""https://issues.example.invalid/new?page={page_url}""}},",Test fixture or example-only host.
+tests/test_engine.py,2399,RESERVED_EXAMPLE_DOMAIN,"""https://issues.example.invalid/new?page=https%3A%2F%2Forg.github.io%2Fkeycloak-pages%2Fdocs%2Fcurrent%2Fguide%2Findex.html"")",Test fixture or example-only host.
+tests/test_engine.py,2405,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(_site_public_path(cfg, ""https://cdn.example.invalid/app.js""), ""https://cdn.example.invalid/app.js"")",Test fixture or example-only host.
+tests/test_engine.py,2406,RESERVED_EXAMPLE_DOMAIN,"self.assertEqual(_site_public_path(cfg, ""//cdn.example.invalid/app.js""), ""//cdn.example.invalid/app.js"")",Test fixture or example-only host.
+tests/test_engine.py,2434,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_path"": ""repo"", ""base_url"": ""https://example.invalid""}}",Test fixture or example-only host.
+tests/test_engine.py,2447,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_path"": ""repo"", ""base_url"": ""https://example.invalid""}}",Test fixture or example-only host.
+tests/test_engine.py,2476,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_url"": ""https://docs.example.invalid"", ""base_path"": ""/keycloak-pages"",",Test fixture or example-only host.
+tests/test_engine.py,2519,RESERVED_EXAMPLE_DOMAIN,"target = {""id"": ""authoring"", ""web_url"": ""https://edit.example.invalid/repo"",",Test fixture or example-only host.
+tests/test_engine.py,2527,RESERVED_EXAMPLE_DOMAIN,"""site"": {""base_url"": ""https://docs.example.invalid"", ""base_path"": """",",Test fixture or example-only host.
+tests/test_engine.py,2536,RESERVED_EXAMPLE_DOMAIN,"self.assertIn('href=""https://edit.example.invalid/repo/edit/main/content/page.adoc""', page.read_text())",Test fixture or example-only host.
+publisher_engine/workflow.py,283,ENV_EXPRESSION,"""          if [[ \""${GITHUB_REF}\"" == \""refs/heads/${DEPLOY_BRANCH}\"" && \""${GITHUB_EVENT_NAME}\"" != \""pull_request\"" ]]; then"",",Environment/template expression; interpretation depends on field and phase.
+README.md,38,ANGLE_PLACEHOLDER,"2. Replace every `<UPPERCASE_PLACEHOLDER>` with a real, reviewed value.",Intentional generic-template placeholder; expected to fail config validation.
+docs/CONFIGURATION.md,19,ENV_EXPRESSION,"Environment interpolation uses `${NAME}` only in explicitly supported non-secret identity/configuration fields. The merged configuration is schema-validated before interpolation and validated again after interpolation, so malformed nested values fail as configuration errors rather than incidental resolver exceptions. Secret values and build/workflow adapter environment expressions remain symbolic until the relevant adapter consumes them. Missing variables fail unless a caller explicitly opts into a diagnostic `allow_missing_env` path in code; normal CLI validation does not silently allow them.",Environment/template expression; interpretation depends on field and phase.
+audit/input/R8-FULL-CONFIG-EFFECTIVENESS-AUDIT.md,52,RESERVED_EXAMPLE_DOMAIN,"| Site | Project-Site-Prefix `/keycloak-pages`, Canonical-Origin `example.invalid`, `generate_index=true`, `robots=noindex`, eine Locale und Version | Domain-Root ohne Prefix, Custom Canonical Origin, mehrere Locale/Version-Kombinationen, `generate_index=false`, Navigationseinträge, statische Assets, alternate root target, alternative trailing-slash-/404-Konfiguration |",Test fixture or example-only host.
+audit/input/R8-AUDIT-REPORT.md,132,RESERVED_EXAMPLE_DOMAIN,**Reproduktion:** Bei `base_url=https://example.invalid` und `base_path=/keycloak-pages` wird für `docs/current/index.html` eine Canonical-URL ohne `/keycloak-pages` erzeugt. `page_url` wird ebenso ohne `base_path` gebildet.,Test fixture or example-only host.
+scripts/test-in-codespaces.sh,5,ENV_EXPRESSION,"PROJECT_ROOT=""$(cd -- ""${SCRIPT_DIR}/.."" && pwd)""",Environment/template expression; interpretation depends on field and phase.
+scripts/test-in-codespaces.sh,19,ENV_EXPRESSION,"MAIN_LOG=""test-results/pytest-main-${TIMESTAMP}.log""",Environment/template expression; interpretation depends on field and phase.
+scripts/test-in-codespaces.sh,20,ENV_EXPRESSION,"PROCESS_LOG=""test-results/pytest-process-${TIMESTAMP}.log""",Environment/template expression; interpretation depends on field and phase.

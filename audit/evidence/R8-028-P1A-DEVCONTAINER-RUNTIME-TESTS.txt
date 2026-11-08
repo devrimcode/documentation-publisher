@@ -1,0 +1,10 @@
+test_declared_runtime_contract_passes_when_all_tools_match (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_declared_runtime_contract_passes_when_all_tools_match) ... ok
+test_verifier_rejects_java_21_as_the_active_default (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_java_21_as_the_active_default) ... ok
+test_verifier_rejects_missing_additional_jdk_21 (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_missing_additional_jdk_21) ... ok
+test_verifier_rejects_non_313_python (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_non_313_python) ... ok
+test_verifier_rejects_wrong_git_lfs_and_maven_versions (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_wrong_git_lfs_and_maven_versions) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.089s
+
+OK

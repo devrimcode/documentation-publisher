@@ -1,0 +1,5 @@
+python=3.13.5
+compileall=PASS
+schema-json-parse=PASS
+packaged-schema-equals-source-schema=PASS
+provider-capability-json=PASS

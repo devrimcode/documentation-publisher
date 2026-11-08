@@ -1,0 +1,7 @@
+Option/contract nodes: 250 (unique)
+Schema/dynamic coverage paths: 258
+Unordered option pairs: 31,125 (= 250 choose 2; all unique; endpoints exist)
+Direct relationship IDs: 87 (C01-C60 + F09/F10/F11 + F12/F14/F15/F19)
+Pair rows with direct relationships: 87
+Unverified N/A pair rows: 31,038 (not compatibility claims)
+Integrity: PASS

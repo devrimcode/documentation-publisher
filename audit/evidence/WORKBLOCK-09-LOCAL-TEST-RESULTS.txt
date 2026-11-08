@@ -1,0 +1,41 @@
+Documentation Publisher Workblock 09 — local build-environment test record
+Date: 2026-11-08
+Python: 3.13.5
+
+Targeted Dev Container tests:
+$ python3 -m pytest -q tests/test_devcontainer_apt.py tests/test_devcontainer_runtime.py tests/test_devcontainer_config.py tests/test_devcontainer_python_bootstrap.py
+35 passed, 8 subtests passed
+
+Main regression group:
+$ python3 -m pytest -q --ignore=tests/test_process.py --ignore=tests/test_packaging.py --ignore=tests/test_p6_p7_manifest_cleanup.py
+265 passed, 1 skipped, 99 subtests passed
+Skip: tests/test_p8_git_lfs.py — real git-lfs client is not installed in this environment.
+
+Manifest/cleanup group:
+$ python3 -m pytest -q tests/test_p6_p7_manifest_cleanup.py
+6 passed
+
+Wheel packaging group:
+$ python3 -m pytest -q tests/test_packaging.py
+3 passed
+
+Process/timeout group:
+$ python3 -Werror::ResourceWarning -m pytest -q tests/test_process.py
+6 passed
+
+Aggregate across the four documented, separated regression groups:
+280 passed, 1 skipped, 99 subtests passed; no test failures.
+
+Additional static checks:
+- bash -n across .devcontainer/*.sh and scripts/*.sh: PASS
+- python3 -m json.tool .devcontainer/devcontainer.json: PASS
+- python3 -m compileall -q publisher_engine tests scripts: PASS
+
+A single monolithic `python3 -m pytest -q` attempt exceeded the 120-second outer execution timeout. The repository's documented isolated groups then completed successfully in separate invocations as recorded above. This is not a GitHub Actions, Docker image, or live Codespaces acceptance result.
+
+External acceptance still required:
+- rebuild the user's Codespace from this complete source tree;
+- confirm new Bash terminals show `$VIRTUAL_ENV` pointing at the repository `.venv`;
+- confirm `python` resolves to `.venv/bin/python`, `import yaml` succeeds, and the acceptance script passes;
+- complete the real Git LFS transfer test with its required test client/fixture;
+- verify the pinned image and APT/Git Subtree lock in an actual Codespaces build.

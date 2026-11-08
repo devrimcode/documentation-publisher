@@ -1,0 +1,119 @@
+test_allowed_https_refresh_host_is_accepted (test_p2_meta_refresh.MetaRefreshValidationTests.test_allowed_https_refresh_host_is_accepted) ... ok
+test_data_url_is_not_an_allowed_meta_refresh_target (test_p2_meta_refresh.MetaRefreshValidationTests.test_data_url_is_not_an_allowed_meta_refresh_target) ... FAIL
+test_existing_local_refresh_target_is_accepted (test_p2_meta_refresh.MetaRefreshValidationTests.test_existing_local_refresh_target_is_accepted) ... ok
+test_external_refresh_host_uses_external_host_allowlist (test_p2_meta_refresh.MetaRefreshValidationTests.test_external_refresh_host_uses_external_host_allowlist) ... FAIL
+test_javascript_meta_refresh_is_rejected_even_when_local_links_disabled (test_p2_meta_refresh.MetaRefreshValidationTests.test_javascript_meta_refresh_is_rejected_even_when_local_links_disabled) ... FAIL
+test_local_refresh_target_must_exist (test_p2_meta_refresh.MetaRefreshValidationTests.test_local_refresh_target_must_exist) ... FAIL
+test_mailto_is_not_an_allowed_meta_refresh_scheme (test_p2_meta_refresh.MetaRefreshValidationTests.test_mailto_is_not_an_allowed_meta_refresh_scheme) ... FAIL
+test_missing_fragment_on_existing_local_refresh_target_is_rejected (test_p2_meta_refresh.MetaRefreshValidationTests.test_missing_fragment_on_existing_local_refresh_target_is_rejected) ... FAIL
+test_no_url_refresh_is_not_treated_as_a_missing_link (test_p2_meta_refresh.MetaRefreshValidationTests.test_no_url_refresh_is_not_treated_as_a_missing_link) ... ok
+test_protocol_relative_refresh_host_uses_external_allowlist (test_p2_meta_refresh.MetaRefreshValidationTests.test_protocol_relative_refresh_host_uses_external_allowlist) ... FAIL
+test_real_subtree_build_rejects_javascript_meta_refresh_before_site_commit (test_p2_meta_refresh.MetaRefreshValidationTests.test_real_subtree_build_rejects_javascript_meta_refresh_before_site_commit) ... FAIL
+test_refresh_scheme_uses_validate_redirect_schemes (test_p2_meta_refresh.MetaRefreshValidationTests.test_refresh_scheme_uses_validate_redirect_schemes) ... FAIL
+test_root_relative_refresh_resolves_inside_project_base_path (test_p2_meta_refresh.MetaRefreshValidationTests.test_root_relative_refresh_resolves_inside_project_base_path) ... ok
+test_unquoted_meta_refresh_content_is_still_validated (test_p2_meta_refresh.MetaRefreshValidationTests.test_unquoted_meta_refresh_content_is_still_validated) ... FAIL
+test_unterminated_quoted_refresh_target_is_rejected_when_local_check_is_disabled (test_p2_meta_refresh.MetaRefreshValidationTests.test_unterminated_quoted_refresh_target_is_rejected_when_local_check_is_disabled) ... FAIL
+
+======================================================================
+FAIL: test_data_url_is_not_an_allowed_meta_refresh_target (test_p2_meta_refresh.MetaRefreshValidationTests.test_data_url_is_not_an_allowed_meta_refresh_target)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 81, in test_data_url_is_not_an_allowed_meta_refresh_target
+    self.assertTrue(any("Data URL is not permitted" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_external_refresh_host_uses_external_host_allowlist (test_p2_meta_refresh.MetaRefreshValidationTests.test_external_refresh_host_uses_external_host_allowlist)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 49, in test_external_refresh_host_uses_external_host_allowlist
+    self.assertTrue(any("External host is not allowed" in e and "evil.example.invalid" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_javascript_meta_refresh_is_rejected_even_when_local_links_disabled (test_p2_meta_refresh.MetaRefreshValidationTests.test_javascript_meta_refresh_is_rejected_even_when_local_links_disabled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 39, in test_javascript_meta_refresh_is_rejected_even_when_local_links_disabled
+    self.assertTrue(any("scheme" in e.lower() and "javascript:" in e.lower() for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_local_refresh_target_must_exist (test_p2_meta_refresh.MetaRefreshValidationTests.test_local_refresh_target_must_exist)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 53, in test_local_refresh_target_must_exist
+    self.assertTrue(any("Broken local link" in e and "missing.html" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_mailto_is_not_an_allowed_meta_refresh_scheme (test_p2_meta_refresh.MetaRefreshValidationTests.test_mailto_is_not_an_allowed_meta_refresh_scheme)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 77, in test_mailto_is_not_an_allowed_meta_refresh_scheme
+    self.assertTrue(any("URL scheme is not permitted" in e and "mailto:" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_missing_fragment_on_existing_local_refresh_target_is_rejected (test_p2_meta_refresh.MetaRefreshValidationTests.test_missing_fragment_on_existing_local_refresh_target_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 91, in test_missing_fragment_on_existing_local_refresh_target_is_rejected
+    self.assertTrue(any("Missing fragment" in e and "next.html#absent" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_protocol_relative_refresh_host_uses_external_allowlist (test_p2_meta_refresh.MetaRefreshValidationTests.test_protocol_relative_refresh_host_uses_external_allowlist)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 86, in test_protocol_relative_refresh_host_uses_external_allowlist
+    self.assertTrue(any("External host is not allowed" in e and "evil.example.invalid" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_real_subtree_build_rejects_javascript_meta_refresh_before_site_commit (test_p2_meta_refresh.MetaRefreshValidationTests.test_real_subtree_build_rejects_javascript_meta_refresh_before_site_commit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 119, in test_real_subtree_build_rejects_javascript_meta_refresh_before_site_commit
+    with self.assertRaisesRegex(BuildError, "URL scheme is not permitted"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BuildError not raised
+
+======================================================================
+FAIL: test_refresh_scheme_uses_validate_redirect_schemes (test_p2_meta_refresh.MetaRefreshValidationTests.test_refresh_scheme_uses_validate_redirect_schemes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 44, in test_refresh_scheme_uses_validate_redirect_schemes
+    self.assertTrue(any("scheme" in e.lower() and "http://legacy.example.invalid/" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_unquoted_meta_refresh_content_is_still_validated (test_p2_meta_refresh.MetaRefreshValidationTests.test_unquoted_meta_refresh_content_is_still_validated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 101, in test_unquoted_meta_refresh_content_is_still_validated
+    self.assertTrue(any("URL scheme is not permitted" in e and "javascript:" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+======================================================================
+FAIL: test_unterminated_quoted_refresh_target_is_rejected_when_local_check_is_disabled (test_p2_meta_refresh.MetaRefreshValidationTests.test_unterminated_quoted_refresh_target_is_rejected_when_local_check_is_disabled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/p2-clean-p1/documentation-publisher-v2/tests/test_p2_meta_refresh.py", line 96, in test_unterminated_quoted_refresh_target_is_rejected_when_local_check_is_disabled
+    self.assertTrue(any("Malformed meta refresh URL" in e for e in errors), errors)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : []
+
+----------------------------------------------------------------------
+Ran 15 tests in 2.702s
+
+FAILED (failures=11)

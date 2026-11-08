@@ -1,0 +1,1 @@
+Keine direkten subprocess.run/Popen/capture_output/Pipe-Aufrufe außerhalb publisher_engine/process.py gefunden.

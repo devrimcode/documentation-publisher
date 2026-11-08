@@ -1,0 +1,4 @@
+Bash syntax: passed
+Python compileall: passed
+APT Deb822 source parse: passed
+Docker/Podman: unavailable; snapshot network DNS: unavailable (not tested as passed)

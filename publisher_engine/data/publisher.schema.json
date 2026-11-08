@@ -1,0 +1,1466 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/documentation-publisher/v2/schema.json",
+  "title": "Generic Documentation Publisher v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "publisher",
+    "sources",
+    "components",
+    "build_tasks",
+    "site",
+    "links",
+    "communication",
+    "validation",
+    "workspace",
+    "publishing_targets",
+    "publishing"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "active_profiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+      },
+      "uniqueItems": true
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "locale"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string",
+          "minLength": 2
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "copyright": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "favicon": {
+          "type": "string"
+        },
+        "homepage_url": {
+          "type": "string"
+        },
+        "repository_url": {
+          "type": "string"
+        },
+        "maintainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clone_url",
+        "ref"
+      ],
+      "properties": {
+        "clone_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auth": {
+          "$ref": "#/$defs/auth"
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "clone_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400,
+          "default": 1800
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "authoring_targets": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/authoringTarget"
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "build_tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/task"
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_url",
+        "output_directory",
+        "components_root",
+        "version"
+      ],
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_path": {
+          "type": "string"
+        },
+        "output_directory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "components_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default_component": {
+          "type": "string"
+        },
+        "generate_index": {
+          "type": "boolean",
+          "default": true
+        },
+        "robots": {
+          "type": "string",
+          "enum": [
+            "index",
+            "noindex"
+          ]
+        },
+        "canonical_base_url": {
+          "type": "string"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "navigation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "href"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "static_assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "destination"
+            ],
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "destination": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "component_path_template": {
+          "type": "string"
+        },
+        "version_index_path_template": {
+          "type": "string"
+        },
+        "default_locale": {
+          "type": "string"
+        },
+        "default_version": {
+          "type": "string"
+        },
+        "root_index_target": {
+          "type": "string"
+        },
+        "trailing_slash": {
+          "type": "boolean"
+        },
+        "not_found_path": {
+          "type": "string"
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "edit": {
+          "$ref": "#/$defs/editLink"
+        },
+        "issues": {
+          "$ref": "#/$defs/routedLink"
+        },
+        "navigation": {
+          "$ref": "#/$defs/routedLink"
+        }
+      }
+    },
+    "communication": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/communicationChannel"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "require_no_symlinks": {
+          "type": "boolean",
+          "default": true
+        },
+        "validate_local_links": {
+          "type": "boolean",
+          "default": true
+        },
+        "validate_fragments": {
+          "type": "boolean",
+          "default": true
+        },
+        "validate_css_assets": {
+          "type": "boolean",
+          "default": true
+        },
+        "validate_edit_links": {
+          "type": "boolean",
+          "default": true
+        },
+        "validate_communication_links": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_site_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_files": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "required_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_external_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved_edit_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "omit"
+          ]
+        },
+        "validate_external_links": {
+          "type": "boolean"
+        },
+        "validate_redirect_schemes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "require_build_manifest": {
+          "type": "boolean"
+        },
+        "max_archive_ratio": {
+          "type": "number",
+          "minimum": 1
+        },
+        "max_html_depth": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temp_root",
+        "cleanup_on_success",
+        "cleanup_on_failure",
+        "fail_on_cleanup_error",
+        "git_user_name",
+        "git_user_email"
+      ],
+      "properties": {
+        "temp_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keep_failed_workspace": {
+          "type": "boolean"
+        },
+        "cleanup_on_success": {
+          "type": "boolean"
+        },
+        "cleanup_on_failure": {
+          "type": "boolean"
+        },
+        "fail_on_cleanup_error": {
+          "type": "boolean"
+        },
+        "cleanup_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "lock_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "git_user_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "git_user_email": {
+          "type": "string",
+          "format": "email"
+        },
+        "keep_on_success": {
+          "type": "boolean"
+        },
+        "cleanup_delay_seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "publishing_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/publishingTarget"
+      }
+    },
+    "publishing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_id"
+      ],
+      "properties": {
+        "target_id": {
+          "$ref": "#/$defs/id"
+        },
+        "artifact_name": {
+          "type": "string"
+        },
+        "retention_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "atomic": {
+          "type": "boolean"
+        },
+        "pre_publish_validation": {
+          "type": "boolean"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manual": {
+          "type": "boolean"
+        },
+        "push_branches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pull_request": {
+          "type": "boolean"
+        },
+        "schedule": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workflow_call": {
+          "type": "boolean"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "concurrency_group": {
+          "type": "string"
+        },
+        "cancel_in_progress": {
+          "type": "boolean"
+        },
+        "deploy_branch": {
+          "type": "string"
+        },
+        "repository_dispatch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_type",
+            "source_id",
+            "source_repository",
+            "source_branch"
+          ],
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]{0,99}$"
+            },
+            "source_id": {
+              "$ref": "#/$defs/id"
+            },
+            "source_repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "source_branch": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "concurrency_group_per_ref": {
+          "type": "boolean",
+          "description": "Append the GitHub Actions ref to the concurrency group to isolate branch and pull-request runs."
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "github_actions",
+            "gitlab_ci"
+          ],
+          "description": "Workflow generator implementation: github_actions (GitHub Pages) or gitlab_ci (GitLab Pages)."
+        },
+        "file": {
+          "type": "string"
+        },
+        "python_version": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "checkout": {
+              "type": "string"
+            },
+            "setup_python": {
+              "type": "string"
+            },
+            "upload_pages_artifact": {
+              "type": "string"
+            },
+            "deploy_pages": {
+              "type": "string"
+            },
+            "setup_java": {
+              "type": "string",
+              "description": "Optional actions/setup-java action pinned to a full commit SHA. Required together with java_version."
+            }
+          }
+        },
+        "config_file": {
+          "type": "string"
+        },
+        "runs_on": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "deploy_environment": {
+          "type": "string"
+        },
+        "build_timeout_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 360
+        },
+        "deploy_timeout_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 360
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "include_hidden_files": {
+          "type": "boolean"
+        },
+        "deploy_permissions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write",
+              "none"
+            ]
+          }
+        },
+        "build_permissions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write",
+              "none"
+            ]
+          }
+        },
+        "container_image": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*@sha256:[0-9a-f]{64}$",
+          "description": "Required for gitlab_ci; immutable OCI image reference pinned by a full sha256 digest."
+        },
+        "java_version": {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+          "description": "Optional Java major/minor runtime requested with the pinned setup-java action."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "const": "gitlab_ci"
+              }
+            },
+            "required": [
+              "provider"
+            ]
+          },
+          "then": {
+            "required": [
+              "container_image"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "const": "github_actions"
+              }
+            },
+            "required": [
+              "provider"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "container_image"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "inherit",
+        "override",
+        "disable"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "vcs",
+        "root",
+        "integration"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "vcs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "clone_url",
+            "default_ref"
+          ],
+          "properties": {
+            "provider": {
+              "const": "git",
+              "description": "Only Git source repositories are supported by the git_subtree source integration adapter."
+            },
+            "clone_url": {
+              "type": "string",
+              "minLength": 1
+            },
+            "web_url": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Explicit browser URL for the source repository; kept separate from the authoring target URL."
+            },
+            "default_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ref_type": {
+              "type": "string",
+              "enum": [
+                "branch",
+                "tag",
+                "commit",
+                "auto"
+              ]
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "submodules": {
+              "type": "boolean"
+            },
+            "lfs": {
+              "type": "boolean"
+            },
+            "sparse_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "auth": {
+              "$ref": "#/$defs/auth"
+            },
+            "allowed_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "clone_timeout_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "dispatch_sha_env": {
+              "type": "string",
+              "pattern": "^[A-Z_][A-Z0-9_]*$",
+              "description": "Optional environment variable carrying an exact source commit SHA from a validated repository_dispatch event."
+            }
+          }
+        },
+        "root": {
+          "type": "string"
+        },
+        "integration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "prefix",
+            "squash"
+          ],
+          "properties": {
+            "mode": {
+              "const": "git_subtree",
+              "description": "The only implemented source integration mode is git_subtree; other source materialization adapters are not available."
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "squash": {
+              "type": "boolean"
+            },
+            "history": {
+              "type": "string",
+              "enum": [
+                "shallow",
+                "full"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "environment",
+            "ssh_agent"
+          ]
+        },
+        "secret_env": {
+          "type": "string",
+          "pattern": "^[A-Z_][A-Z0-9_]*$"
+        },
+        "username_env": {
+          "type": "string",
+          "pattern": "^[A-Z_][A-Z0-9_]*$"
+        }
+      }
+    },
+    "authoringTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "web_url",
+        "ref",
+        "edit_url_template"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "provider": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Legacy display-only provider label. It does not select or invoke a provider-specific adapter."
+        },
+        "web_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref_type": {
+          "type": "string",
+          "enum": [
+            "branch",
+            "tag",
+            "commit"
+          ]
+        },
+        "edit_url_template": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "mapping": {
+          "$ref": "#/$defs/pathMapping"
+        },
+        "unresolved_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "omit"
+          ]
+        },
+        "provider_label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display/metadata only. It does not select a provider adapter; edit_url_template is the actual URL strategy."
+        }
+      }
+    },
+    "pathMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_prefix": {
+          "type": "string"
+        },
+        "target_prefix": {
+          "type": "string"
+        },
+        "strip_leading_segments": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "default": 0,
+          "description": "Remove this many leading path segments after source_prefix matching and before target_prefix is applied. Useful for versioned documentation URLs such as /docs/{version}/{guide}/."
+        },
+        "collapse_index_file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "If the final mapped path segment has this exact filename, remove that segment so /guide/index.html maps to the guide directory in the target repository."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "target"
+            ],
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "editLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/mode"
+        },
+        "target_id": {
+          "$ref": "#/$defs/id"
+        },
+        "unresolved_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "omit"
+          ]
+        },
+        "require_markers": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "routedLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/mode"
+        },
+        "target_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit HTTPS destination base. It is independent of the publisher and build-source repositories."
+        },
+        "target_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url_template": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit destination template. Variables include {target_url}, {target_ref}, {path}, {original_path}, {query_suffix}, {fragment_suffix}, {page_url}, and {page_title}."
+        },
+        "source_prefixes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Explicit incoming URL/path prefixes used to classify links of this class. The prefixes never choose the destination."
+        },
+        "relative_prefixes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Explicit relative href prefixes (for example ../) used to select neighboring pages. They require source_page_base_url."
+        },
+        "source_page_base_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HTTPS source documentation root used to resolve explicitly selected relative neighbor hrefs against the current component-relative page path."
+        },
+        "mapping": {
+          "$ref": "#/$defs/pathMapping"
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "unresolved_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "omit"
+          ]
+        },
+        "require_markers": {
+          "type": "boolean",
+          "default": true
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "_self",
+            "_blank"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "override"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "target_url",
+              "url_template"
+            ]
+          }
+        }
+      ]
+    },
+    "communicationChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/mode"
+        },
+        "provider": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Legacy display-only provider label. It does not select or invoke a provider-specific adapter."
+        },
+        "url_template": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "cc": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bcc": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "_self",
+            "_blank"
+          ]
+        },
+        "query": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Dynamic query parameter template values. Keys must be lower_snake_case names; values are URL-encoded before insertion."
+        },
+        "require_markers": {
+          "type": "boolean",
+          "default": true
+        },
+        "private_target": {
+          "type": "boolean",
+          "deprecated": true,
+          "description": "Legacy operator attestation alias only. The publisher cannot verify external endpoint privacy or access control."
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "provider_label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display/metadata only. It does not select provider API behavior; the generic HTTPS/mailto template formatter is used."
+        },
+        "private_target_attested": {
+          "type": "boolean",
+          "description": "Explicit operator attestation that the configured security-report endpoint is private and access-controlled. This is not verified by the publisher."
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "adapter",
+        "working_directory",
+        "argv",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "adapter": {
+          "type": "string",
+          "enum": [
+            "command"
+          ]
+        },
+        "working_directory": {
+          "type": "string"
+        },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "retry": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "pass_environment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "secret_environment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "working_directory_scope": {
+          "type": "string",
+          "enum": [
+            "source",
+            "publisher"
+          ]
+        },
+        "retry_safe": {
+          "type": "boolean",
+          "default": false
+        },
+        "retry_delay_seconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "source_id",
+        "route",
+        "tasks",
+        "fallback",
+        "output_path"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "route": {
+          "type": "string"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "output_path": {
+          "type": "string"
+        },
+        "index_file": {
+          "type": "string",
+          "default": "index.html"
+        },
+        "fallback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "inherit",
+                "redirect",
+                "stub",
+                "omit",
+                "error"
+              ]
+            },
+            "url": {
+              "type": "string"
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "locale": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "provenance_file": {
+          "type": "string"
+        },
+        "output_kind": {
+          "type": "string",
+          "enum": [
+            "directory",
+            "file",
+            "zip",
+            "tar"
+          ],
+          "default": "directory"
+        },
+        "archive_root": {
+          "type": "string"
+        },
+        "link_overrides": {
+          "$ref": "#/$defs/componentLinkOverrides"
+        },
+        "required_output_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "link_adapter": {
+          "type": "string",
+          "enum": [
+            "keycloak_asciidoc"
+          ],
+          "description": "Optional source-specific HTML adapter that converts repository-generated links into provenance-bearing publisher markers."
+        }
+      }
+    },
+    "publishingTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "adapter",
+        "output_path"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "adapter": {
+          "type": "string",
+          "enum": [
+            "artifact",
+            "filesystem",
+            "command"
+          ],
+          "description": "Implemented adapters: artifact (workflow handoff, not a remote API client), filesystem (local copy), command (explicit argv)."
+        },
+        "output_path": {
+          "type": "string"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pass_environment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "secret_environment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "allow_external_destination": {
+          "type": "boolean",
+          "default": false
+        },
+        "replace_existing": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "componentLinkOverrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "edit": {
+          "$ref": "#/$defs/editLink"
+        },
+        "issues": {
+          "$ref": "#/$defs/routedLink"
+        },
+        "navigation": {
+          "$ref": "#/$defs/routedLink"
+        },
+        "communication": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/communicationChannel"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "project": {
+    "id": "documentation-project",
+    "title": "Documentation Project",
+    "description": "Published documentation",
+    "locale": "en",
+    "timezone": "UTC",
+    "license": "",
+    "copyright": "",
+    "logo": "",
+    "favicon": "",
+    "homepage_url": "",
+    "repository_url": "",
+    "maintainers": []
+  },
+  "selection": [
+    "keycloak-docs"
+  ],
+  "components": [
+    {
+      "id": "keycloak-docs",
+      "route": "keycloak",
+      "tasks": [
+        "build-keycloak-docs"
+      ],
+      "dependencies": []
+    }
+  ],
+  "sources": [
+    {
+      "id": "keycloak",
+      "mode": "git_subtree",
+      "prefix": ".publisher-sources/keycloak",
+      "ref": "main"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "build-keycloak-docs",
+      "source_id": "keycloak",
+      "depends_on": []
+    }
+  ]
+}

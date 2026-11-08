@@ -1,0 +1,6 @@
+Options: 239 unique
+Schema coverage rows: 258
+Pairwise combinations: 28441 (239 choose 2)
+Direct relationship IDs: 74 (C01-C60 + 14 F09-F11)
+Pair rows carrying direct relations: 75
+N/A pair rows: 28366

@@ -1,0 +1,42 @@
+test_build_job_exports_decision_step_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_build_job_exports_decision_step_output) ... FAIL
+test_deploy_job_consumes_exported_build_job_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_deploy_job_consumes_exported_build_job_output) ... FAIL
+test_dry_run_has_no_deploy_job_or_job_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_dry_run_has_no_deploy_job_or_job_output) ... ok
+test_export_references_the_unique_decision_step (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_export_references_the_unique_decision_step) ... ERROR
+
+======================================================================
+ERROR: test_export_references_the_unique_decision_step (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_export_references_the_unique_decision_step)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/r8-p3-start/p2-baseline/documentation-publisher-v2/tests/test_p3_workflow_deploy_output.py", line 68, in test_export_references_the_unique_decision_step
+    build["outputs"]["deploy"],
+    ~~~~~^^^^^^^^^^^
+KeyError: 'outputs'
+
+======================================================================
+FAIL: test_build_job_exports_decision_step_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_build_job_exports_decision_step_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/r8-p3-start/p2-baseline/documentation-publisher-v2/tests/test_p3_workflow_deploy_output.py", line 39, in test_build_job_exports_decision_step_output
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        build.get("outputs", {}).get("deploy"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "${{ steps.decision.outputs.deploy }}",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: None != '${{ steps.decision.outputs.deploy }}'
+
+======================================================================
+FAIL: test_deploy_job_consumes_exported_build_job_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_deploy_job_consumes_exported_build_job_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/r8-p3-start/p2-baseline/documentation-publisher-v2/tests/test_p3_workflow_deploy_output.py", line 53, in test_deploy_job_consumes_exported_build_job_output
+    self.assertIn("deploy", build.get("outputs", {}))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'deploy' not found in {}
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.013s
+
+FAILED (failures=2, errors=1)

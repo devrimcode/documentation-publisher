@@ -1,0 +1,13 @@
+usage: documentation-publisher generate-workflow [-h] [--config CONFIG]
+                                                 [--profile PROFILE]
+                                                 [--output OUTPUT]
+                                                 [--replace-existing]
+
+options:
+  -h, --help          show this help message and exit
+  --config CONFIG
+  --profile PROFILE   Apply a named profile (may be repeated; order is
+                      significant)
+  --output OUTPUT
+  --replace-existing  Replace an existing workflow file; without this flag
+                      existing files are preserved

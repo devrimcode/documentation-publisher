@@ -1,0 +1,3 @@
+ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
+
+EXIT=1

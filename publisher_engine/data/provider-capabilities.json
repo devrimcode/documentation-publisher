@@ -1,0 +1,90 @@
+{
+  "contract_version": 1,
+  "product": "Documentation Publisher v2",
+  "providers": {
+    "workflow": {
+      "github_actions": {
+        "status": "implemented",
+        "capabilities": [
+          "validate-config",
+          "plan",
+          "repository-dispatch-source-trigger",
+          "build",
+          "upload-github-pages-artifact",
+          "deploy-github-pages"
+        ],
+        "deployment_target": "GitHub Pages",
+        "notes": "The generated workflow uses GitHub Actions and the GitHub Pages artifact/deploy actions. It does not publish directly through a GitHub API adapter. Supports a config-validated repository_dispatch event from an explicitly selected GitHub source repository/branch; the exact event commit SHA is fetched by the git_subtree source integration."
+      },
+      "gitlab_ci": {
+        "status": "implemented",
+        "capabilities": [
+          "validate-config",
+          "build",
+          "build-artifact",
+          "deploy-gitlab-pages"
+        ],
+        "deployment_target": "GitLab Pages",
+        "minimum_gitlab_version": "17.9",
+        "notes": "Generates a GitLab CI pipeline using an operator-supplied OCI image pinned by sha256 digest. publishing.dry_run=true generates validation/build jobs only; live Pages deployment requires explicit dry_run=false and is restricted to deploy_branch. The image must contain the configured Python minor version, Git and git-subtree; Git LFS is checked when an input source enables LFS."
+      }
+    },
+    "source_vcs": {
+      "git": {
+        "status": "implemented",
+        "integration_modes": [
+          "git_subtree"
+        ],
+        "authentication_modes": [
+          "none",
+          "environment",
+          "ssh_agent"
+        ],
+        "notes": "Other VCS providers and source materialization modes are not implemented."
+      }
+    },
+    "publishing_adapters": {
+      "artifact": {
+        "status": "implemented",
+        "scope": "Validated site artifact handoff to a configured GitHub Actions or GitLab CI workflow; the workflow performs its native Pages deployment. It is not a remote hosting API client."
+      },
+      "filesystem": {
+        "status": "implemented",
+        "scope": "Validated local filesystem copy with atomic replacement options."
+      },
+      "command": {
+        "status": "implemented",
+        "scope": "Explicit operator-supplied argv with allowlisted environment; no implicit shell or built-in provider API."
+      }
+    },
+    "authoring_links": {
+      "strategy": "edit_url_template",
+      "provider_label_semantics": "metadata_only",
+      "provider_specific_adapters": [],
+      "notes": "provider/provider_label does not select an adapter. The URL is produced by the explicit edit_url_template and shared path mapping/encoding."
+    },
+    "component_link_adapters": {
+      "keycloak_asciidoc": {
+        "status": "implemented",
+        "scope": "Keycloak AsciiDoc header-link classification into independent edit, issue and neighbor-page classes. Edit links validate against the configured source repository/ref before mapping to the configured authoring target; issue links match explicit URL prefixes independent of anchor text; neighbor links match explicit absolute/root-relative or page-relative selectors and exclude static downloads/assets. Each destination is resolved independently from config."
+      }
+    },
+    "communication": {
+      "strategies": [
+        "mailto_template",
+        "generic_https_url_template"
+      ],
+      "provider_label_semantics": "metadata_only",
+      "provider_specific_api_adapters": [],
+      "notes": "Communication URLs use the generic template formatter and configured host allowlists; no GitHub/GitLab/Bitbucket issue or discussion API client is included."
+    }
+  },
+  "not_implemented": [
+    "bitbucket_pipeline_provider",
+    "bitbucket_pages_deployment_adapter",
+    "github_repository_api_publisher",
+    "gitlab_repository_api_publisher",
+    "bitbucket_repository_api_publisher",
+    "provider_specific_issue_or_discussion_api_clients"
+  ]
+}

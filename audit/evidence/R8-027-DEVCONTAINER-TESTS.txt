@@ -1,0 +1,28 @@
+HISTORICAL R8-027 STATIC CONFIG TEST LOG — predates R8-028-P1A runtime-verifier tests. Current counts and toolchain evidence are in the R8-028-P1A report.
+
+$ python -m unittest tests.test_devcontainer_config -v
+Result: 9 passed
+
+Coverage:
+- Active .devcontainer/devcontainer.json exists at the GitHub Codespaces discovery path.
+- devcontainer.json points to .devcontainer/Dockerfile and waits for postCreateCommand.
+- Microsoft Python 3.13 Bookworm base image tag is configured.
+- Java 25/21 Temurin and Maven Feature settings are configured.
+- Git LFS Feature is enabled with autoPull disabled.
+- Keycloak CI Maven connection/retry flags are configured.
+- Dockerfile installs Debian git-subtree and targets the active git --exec-path.
+- Dockerfile guard preserves an existing helper when source and target are the same path,
+  and creates a symlink only when the package path differs.
+- No local Feature installer or .devcontainer/devcontainer.json.example remains.
+- postCreate/postStart commands point to lifecycle scripts that exist.
+- test-in-codespaces.sh runs environment/CLI checks, then invokes the main suite and
+  subprocess/process-group suite directly and separately, writing each output to a log file.
+
+Additional direct host probe:
+- The same-path branch was executed against this host's real
+  /usr/lib/git-core/git-subtree; the file remained a regular executable and
+  `git subtree -h` was discoverable. PASS.
+
+A synthetic clean Git repository fixture ran post-create with mocked Java, Maven and Git LFS
+commands: .venv creation without requirements files succeeded and environment verification
+passed. See R8-027-CLEAN-REPO-POST-CREATE-FIXTURE.txt.

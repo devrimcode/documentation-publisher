@@ -1,0 +1,5 @@
+id,previous_status,current_status,change
+F12,OPEN_INTENTIONAL_SETUP_GAP,CLOSED_LOCAL_INIT_CONFIG,Safe init-config command uses packaged generic fail-closed template and never overwrites.
+F14,OPEN,CLOSED_LOCAL_WHEEL_INSTALL,Installable wheel and console entry point with packaged runtime resources verified.
+F15,CONTRACT_LIMITED,PARTIALLY_CLOSED_EXPLICIT_CAPABILITY_CONTRACT,Machine-readable support contract now matches schema; additional provider adapters remain unimplemented.
+F19,OPEN,CLOSED_LOCAL_ORDERED_PROFILE_PROPAGATION,Publish and generate-workflow accept ordered repeatable profiles and generated CI replays the selection.

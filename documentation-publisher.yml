@@ -1,0 +1,190 @@
+name: "Documentation Publisher"
+
+on:
+  workflow_dispatch:
+    inputs:
+      components:
+        description: Component IDs separated by commas, or all
+        required: false
+        default: all
+        type: string
+  push:
+    branches:
+      - "main"
+    paths:
+      - "publisher.yml"
+      - "publisher_engine/**"
+      - "schemas/**"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - "publisher.example.yml"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "publisher.yml"
+      - "publisher_engine/**"
+      - "schemas/**"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - "publisher.example.yml"
+      - ".github/workflows/**"
+  repository_dispatch:
+    types:
+      - "keycloak-documentation-updated"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "documentation-publisher-pages-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    outputs:
+      deploy: ${{ steps.decision.outputs.deploy }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout workflow and configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.13"
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Install engine package
+        run: python -m pip install .
+      - name: Validate configuration
+        env:
+          CONFIG_FILE: "publisher.yml"
+          MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
+        run: python -m publisher_engine.cli validate-config --config "$CONFIG_FILE"
+      - name: Validate source repository dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        shell: bash
+        env:
+          EXPECTED_SOURCE_REPOSITORY: "devrimcode/keycloak"
+          EXPECTED_SOURCE_REF: "refs/heads/main"
+          EVENT_SOURCE_REPOSITORY: ${{ github.event.client_payload.repository }}
+          EVENT_SOURCE_REF: ${{ github.event.client_payload.ref }}
+          EVENT_SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          python - <<'PY'
+          import os, re, sys
+          expected_repo = os.environ['EXPECTED_SOURCE_REPOSITORY']
+          actual_repo = os.environ['EVENT_SOURCE_REPOSITORY']
+          expected_ref = os.environ['EXPECTED_SOURCE_REF']
+          actual_ref = os.environ['EVENT_SOURCE_REF']
+          source_sha = os.environ['EVENT_SOURCE_SHA']
+          if actual_repo.casefold() != expected_repo.casefold():
+              sys.exit(f'Untrusted source repository in dispatch: {actual_repo!r}')
+          if actual_ref != expected_ref:
+              sys.exit(f'Unexpected source branch in dispatch: {actual_ref!r}')
+          if not re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', source_sha):
+              sys.exit('Dispatch payload must contain a full Git commit SHA')
+          print(f'Validated source dispatch: {actual_repo}@{source_sha}')
+          PY
+      - name: Build and validate site
+        env:
+          SELECTED_COMPONENTS: ${{ github.event.inputs.components || inputs.components || 'all' }}
+          PUBLISHER_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+          CONFIG_FILE: "publisher.yml"
+          PUBLISHER_KEYCLOAK_SOURCE_SHA: ${{ github.event.client_payload.sha }}
+          MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
+        run: python -m publisher_engine.cli build --config "$CONFIG_FILE" --components "$SELECTED_COMPONENTS" --publisher-ref "$PUBLISHER_REF"
+      - name: Check source revision is current before artifact upload
+        id: source-freshness
+        if: github.event_name == 'repository_dispatch'
+        shell: bash
+        env:
+          SOURCE_CLONE_URL: "https://github.com/devrimcode/keycloak.git"
+          SOURCE_REF: "refs/heads/main"
+          EVENT_SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          set -euo pipefail
+          current_sha="$(git ls-remote --exit-code "$SOURCE_CLONE_URL" "$SOURCE_REF" | cut -f1)"
+          if [[ -z "$current_sha" ]]; then
+            echo 'Unable to resolve the configured source branch head' >&2
+            exit 1
+          fi
+          if [[ "${current_sha,,}" == "${EVENT_SOURCE_SHA,,}" ]]; then
+            echo current=true >> "$GITHUB_OUTPUT"
+          else
+            echo current=false >> "$GITHUB_OUTPUT"
+            echo "Skipping stale source revision ${EVENT_SOURCE_SHA}; current branch head is ${current_sha}"
+          fi
+      - name: Decide whether this run may deploy
+        id: decision
+        shell: bash
+        env:
+          DEPLOY_BRANCH: "main"
+          SOURCE_REVISION_CURRENT: ${{ steps.source-freshness.outputs.current || 'true' }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == repository_dispatch && "$SOURCE_REVISION_CURRENT" != true ]]; then
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF" == "refs/heads/${DEPLOY_BRANCH}" && "$GITHUB_EVENT_NAME" != pull_request ]]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload GitHub Pages artifact
+        if: steps.decision.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          name: "documentation-publisher-site"
+          path: "_site"
+          retention-days: 7
+          include-hidden-files: true
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.deploy == 'true'
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      id-token: write
+      pages: write
+    environment:
+      name: "github-pages"
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Recheck source revision immediately before deployment
+        id: source-freshness
+        if: github.event_name == 'repository_dispatch'
+        shell: bash
+        env:
+          SOURCE_CLONE_URL: "https://github.com/devrimcode/keycloak.git"
+          SOURCE_REF: "refs/heads/main"
+          EVENT_SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          set -euo pipefail
+          current_sha="$(git ls-remote --exit-code "$SOURCE_CLONE_URL" "$SOURCE_REF" | cut -f1)"
+          if [[ -z "$current_sha" ]]; then
+            echo 'Unable to resolve the configured source branch head' >&2
+            exit 1
+          fi
+          if [[ "${current_sha,,}" == "${EVENT_SOURCE_SHA,,}" ]]; then
+            echo current=true >> "$GITHUB_OUTPUT"
+          else
+            echo current=false >> "$GITHUB_OUTPUT"
+            echo "Skipping deployment of stale source revision ${EVENT_SOURCE_SHA}; current branch head is ${current_sha}"
+          fi
+      - name: Deploy validated artifact
+        id: deployment
+        if: github.event_name != 'repository_dispatch' || steps.source-freshness.outputs.current == 'true'
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+        with:
+          artifact_name: "documentation-publisher-site"
+

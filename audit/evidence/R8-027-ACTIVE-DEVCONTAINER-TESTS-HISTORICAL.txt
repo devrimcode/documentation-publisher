@@ -1,0 +1,13 @@
+HISTORICAL LOG — earlier candidate, before the final Dockerfile guard and eighth test were added.
+
+$ python -m unittest tests.test_devcontainer_config tests.test_devcontainer_feature -v
+Result: 7 passed in 0.030s
+
+Coverage:
+- Active .devcontainer/devcontainer.json exists at the Codespaces discovery path.
+- Correct Python image and Java 25 / Java 21 Temurin + Maven feature settings.
+- Git LFS feature enabled with autoPull disabled.
+- Keycloak CI Maven transport/retry flags configured.
+- postCreate/postStart commands point to present lifecycle scripts.
+- No example-only devcontainer.json.example is left behind.
+- Local Git Subtree Feature links into the active Git exec path and does not export GIT_EXEC_PATH.

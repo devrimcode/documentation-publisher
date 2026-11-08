@@ -1,0 +1,9 @@
+usage: documentation-publisher init-config [-h] [--output OUTPUT]
+                                           [--template TEMPLATE]
+
+options:
+  -h, --help           show this help message and exit
+  --output OUTPUT      New configuration path (default: ./publisher.yml);
+                       existing files are never overwritten
+  --template TEMPLATE  Optional local YAML template; defaults to the packaged
+                       publisher.example.yml

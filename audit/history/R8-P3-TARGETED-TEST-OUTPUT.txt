@@ -1,0 +1,9 @@
+test_build_job_exports_decision_step_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_build_job_exports_decision_step_output) ... ok
+test_deploy_job_consumes_exported_build_job_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_deploy_job_consumes_exported_build_job_output) ... ok
+test_dry_run_has_no_deploy_job_or_job_output (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_dry_run_has_no_deploy_job_or_job_output) ... ok
+test_export_references_the_unique_decision_step (test_p3_workflow_deploy_output.WorkflowDeployJobOutputTests.test_export_references_the_unique_decision_step) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.012s
+
+OK

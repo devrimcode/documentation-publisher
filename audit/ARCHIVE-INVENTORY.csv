@@ -1,0 +1,65 @@
+archive_name,classification,disposition
+documentation-publisher-v2-r8-2.0.10-dev-r8-028-workblock-01.tar.gz,superseded-parallel-branch,PARALLELER ZWEIG; WIRD NICHT MEHR ALS BASIS VERWENDET; Sicherheitsregressionen gegen P12
+documentation-publisher-v2-r8-2.0.10-dev-r8-028-workblock-01.zip,superseded-parallel-branch,PARALLELER ZWEIG; WIRD NICHT MEHR ALS BASIS VERWENDET; Sicherheitsregressionen gegen P12
+documentation-publisher-v2-r8-2.0.10-dev-P12-R8-028-GROUP-1.tar.gz,current-canonical,KANONISCHE QUELLBASIS (gleicher Inhalt in ZIP/TAR.GZ)
+documentation-publisher-v2-r8-2.0.10-dev-P12-R8-028-GROUP-1.zip,current-canonical,KANONISCHE QUELLBASIS (gleicher Inhalt in ZIP/TAR.GZ)
+R8-028-VOLLSTAENDIGES-CODE-KONFIGURATIONS-AUDIT.tar.gz,audit-only,"AUDIT-ONLY; Matrizen/Befunde, kein eigenständiges Quellprojekt"
+R8-028-VOLLSTAENDIGES-CODE-KONFIGURATIONS-AUDIT.zip,audit-only,"AUDIT-ONLY; Matrizen/Befunde, kein eigenständiges Quellprojekt"
+documentation-publisher-v2-r8-2.0.10-dev-P11-ACTIVE-DEVCONTAINER.tar.gz,verified-ancestor,"VERIFIZIERTER ABSTAMMUNGSSTAND VON P12; HISTORISCH, NICHT WEITERBEARBEITEN"
+R8-027-ACTIVE-DEVCONTAINER-FOLDER.tar.gz,other-archive,NICHT ALS AKTUELLE PUBLISHER-QUELLBASIS VERWENDEN; Herkunft/Inhalt separat
+documentation-publisher-v2-r8-2.0.10-dev-P11-ACTIVE-DEVCONTAINER.zip,verified-ancestor,"VERIFIZIERTER ABSTAMMUNGSSTAND VON P12; HISTORISCH, NICHT WEITERBEARBEITEN"
+R8-027-ACTIVE-DEVCONTAINER-FOLDER.zip,other-archive,NICHT ALS AKTUELLE PUBLISHER-QUELLBASIS VERWENDEN; Herkunft/Inhalt separat
+documentation-publisher-v2-r8-2.0.10-dev-P11-CODESPACES-TEST-CANDIDATE.tar.gz,historical-project-snapshot,HISTORISCHER P11-KANDIDAT; NICHT KANONISCH
+documentation-publisher-v2-r8-2.0.10-dev-P11-CODESPACES-TEST-CANDIDATE.zip,historical-project-snapshot,HISTORISCHER P11-KANDIDAT; NICHT KANONISCH
+documentation-publisher-v2-r8-2.0.10-dev-R8-P11-CUMULATIVE.tar.gz,historical-project-snapshot,HISTORISCHER P11-KANDIDAT; NICHT KANONISCH
+documentation-publisher-v2-r8-2.0.10-dev-R8-P11-CUMULATIVE.zip,historical-project-snapshot,HISTORISCHER P11-KANDIDAT; NICHT KANONISCH
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P3-full-project.tar.gz,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P3-full-project.zip,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P2-full-project.tar.gz,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P2-full-project.zip,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P1-full-project(1).zip,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P1-full-project.zip,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+documentation-publisher-v2-r8-corrected-2.0.10-dev-P1-full-project.tar.gz,historical-project-snapshot,HISTORISCHER PHASENSTAND; nur Nachweis/Abstammung
+r8-027-devcontainer-addon.zip,other-archive,NICHT ALS AKTUELLE PUBLISHER-QUELLBASIS VERWENDEN; Herkunft/Inhalt separat
+documentation-publisher-v2-r8-corrected-2.0.10-dev-r8-027.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-r8-corrected-2.0.10-dev.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+R8-AUDIT-DELIVERABLES(1).zip,audit-support,"AUDIT-/PLANUNGSUNTERLAGE, kein aktuelles Quellprojekt"
+documentation-publisher-v2-r8-corrected-2.0.9-dev.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+R8-AUDIT-DELIVERABLES.zip,audit-support,"AUDIT-/PLANUNGSUNTERLAGE, kein aktuelles Quellprojekt"
+R8-AUDIT-BUNDLE.tar.gz,audit-support,"AUDIT-/PLANUNGSUNTERLAGE, kein aktuelles Quellprojekt"
+keycloak-publisher-runbook.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+documentation-publisher-v2-hardened-r8(1).zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r8.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r8.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r7.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r7.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r6.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r6.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r3.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened-r3.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2-hardened.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2(1).zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2.tar.gz,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+documentation-publisher-v2.zip,historical-project-snapshot,"ÄLTERER PUBLISHER-STAND; VERALTET, NICHT ALS BASIS VERWENDEN"
+publisher-rescue-plan-v2.zip,audit-support,"AUDIT-/PLANUNGSUNTERLAGE, kein aktuelles Quellprojekt"
+suicide.tar.gz,other-archive,NICHT ALS AKTUELLE PUBLISHER-QUELLBASIS VERWENDEN; Herkunft/Inhalt separat
+keycloak-docs-publisher-template(1).zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-docs-publisher-template.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages-created-files-2026-11-04.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages-forensic-evidence-2026-11-04 (1).zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages-portable-integration-checked.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages-portable-integration.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-pages-integration.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-edit-link-fix.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+keycloak-docs-pages-template.zip,keycloak-support,SEPARATES KEYCLOAK-INTEGRATIONS-/FORENSIK-ARTEFAKT; kein Publisher-Hauptprojekt
+nis2-guide.zip,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+nis2-guide-for-release-v1.zip,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+nis2-guide-v1-release.tar.gz,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+nis2guide-v1.zip,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+guides_patched.zip,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+guides.zip,other-project,ANDERES DOKUMENTATIONSPROJEKT; nicht Teil dieser Publisher-Codebasis
+
+documentation-publisher-v2-r8-2.0.13-dev-P12-R8-028-WORKBLOCK-13-ISSUE-ROUTE-PREFIX-CORRECTION.tar.gz,current-canonical,AKTUELLER KANONISCHER STAND; Workblock 13 issue URL route correction
+workblock12.tar.gz,verified-ancestor,VERIFIZIERTER DIREKTER VORFAHR VON WORKBLOCK 13; historische Basis

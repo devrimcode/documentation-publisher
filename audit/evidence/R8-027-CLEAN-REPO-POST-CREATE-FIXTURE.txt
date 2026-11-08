@@ -1,0 +1,10 @@
+[devcontainer] Python 3.13.5 detected.
+[devcontainer] No requirements file exists yet; created .venv. Dependencies will be installed when project files are added.
+[devcontainer] Python: Python 3.13.5
+[devcontainer] Git: git version 2.47.3
+[devcontainer] Git exec path: /usr/lib/git-core
+[devcontainer] Java: openjdk version "25.0.1" 2026-10-01
+[devcontainer] Maven: Apache Maven 3.9.9
+[devcontainer] Git LFS: git-lfs/3.6.0 (GitHub; linux amd64; go 1.24.0)
+[devcontainer] git subtree: available through active Git exec path
+[devcontainer] Environment verification passed.

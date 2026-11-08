@@ -1,0 +1,29 @@
+HISTORICAL RUN — before the eighth active Dev Container test and before the latest 208-pass regression. Not the current totals.
+
+Documentation Publisher 2.0.10-dev — current regression evidence
+Date: 2026-11-07 (after Dockerfile-based R8-027 configuration update)
+
+The current regression was run in two separate pytest invocations to keep the
+long-running subprocess/process-group cases isolated from the main suite.
+
+Command 1:
+  python -m pytest -q --ignore=tests/test_process.py
+Result:
+  201 passed, 1 skipped, 53 subtests passed in 28.01s
+
+Command 2:
+  python -m pytest -q tests/test_process.py
+Result:
+  6 passed in 9.51s
+
+Combined result:
+  207 passed, 1 skipped, 0 failed (across the two invocations).
+
+The active Dev Container configuration regression is separately reported as
+7/7 passed in R8-027-DEVCONTAINER-TESTS.txt. Those seven tests are also included
+in the 201-test main-suite count above.
+
+The one skipped test is the real Git-LFS object transfer. The client/server
+integration fixture is not available in this runner; source-relative LFS
+include-filter tests passed. The separate invocation boundary is explicit:
+this file does not claim a single uninterrupted pytest process.

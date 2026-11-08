@@ -1,0 +1,30 @@
+WORKBLOCK 12 HTTP navigation-anchor regression evidence
+Date: 2026-11-08
+Version: 2.0.12-dev
+
+Targeted command:
+  python3 -m pytest -q tests/test_p2_meta_refresh.py tests/test_engine.py
+Result before final additional integration test: 214 passed, 96 subtests.
+Final dedicated test_p2_meta_refresh.py result after adding the local subtree integration test: 18 passed.
+
+Separated final regression commands/results:
+  python3 -m pytest -q --ignore=tests/test_process.py --ignore=tests/test_packaging.py --ignore=tests/test_p6_p7_manifest_cleanup.py
+  276 passed, 1 skipped, 104 subtests; skip requires a real Git LFS transfer fixture.
+  python3 -m pytest -q tests/test_p6_p7_manifest_cleanup.py
+  6 passed.
+  python3 -m pytest -q tests/test_packaging.py
+  3 passed.
+  python3 -Werror::ResourceWarning -m pytest -q tests/test_process.py
+  6 passed.
+
+Total: 291 passed, 1 skipped, 104 subtests.
+
+Production configuration:
+  python3 -m publisher_engine.cli --version -> 2.0.12-dev
+  validate-config publisher.yml -> passed (1 source, 1 component, 1 task)
+  plan publisher.yml -> keycloak-documentation; git_subtree; .publisher-sources/keycloak
+  compileall -> passed
+  Both Draft 2020-12 schemas -> valid; root/package schemas byte-identical.
+  Root/package generic example config -> byte-identical.
+
+A local fixture used a real temporary Git repository and git_subtree build. It emitted the HTTP service-example anchors (localhost:8080, broker-keycloak:8180, host.com/*$$ and host:port) with validate_redirect_schemes=[https]. The build passed and the generated links were preserved. HTTP meta-refresh remained rejected.

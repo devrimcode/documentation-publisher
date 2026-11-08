@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "documentation-publisher"
+version = "2.0.15.dev0"
+description = "Configuration-driven documentation assembly, validation and publishing engine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0.2,<7",
+  "jsonschema>=4.23,<5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<10", "setuptools>=68,<83", "wheel>=0.43,<1"]
+
+[project.scripts]
+documentation-publisher = "publisher_engine.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["publisher_engine*"]
+
+[tool.setuptools.package-data]
+publisher_engine = ["data/*.json", "data/*.yml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

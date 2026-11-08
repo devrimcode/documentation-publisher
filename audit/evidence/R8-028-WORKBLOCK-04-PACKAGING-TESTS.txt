@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0 -- /opt/pyvenv/bin/python
+rootdir: /mnt/data/work_p12_r8_028/final_verification/zip/documentation-publisher-v2
+configfile: pyproject.toml
+collecting ... collected 3 items
+
+tests/test_packaging.py::PythonPackagingTests::test_repository_schema_and_packaged_schema_are_identical PASSED
+tests/test_packaging.py::PythonPackagingTests::test_repository_template_and_packaged_template_are_identical PASSED
+tests/test_packaging.py::PythonPackagingTests::test_wheel_contains_schema_template_capabilities_and_console_entrypoint

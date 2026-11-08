@@ -1,0 +1,310 @@
+schema_version: 2
+
+project:
+  id: keycloak-documentation
+  title: Keycloak Documentation
+  description: Published Keycloak documentation
+  locale: en
+  timezone: UTC
+  license: ""
+  copyright: ""
+  logo: ""
+  favicon: ""
+  homepage_url: ""
+  repository_url: https://github.com/devrimcode/documentation-publisher
+  maintainers: []
+
+# Publisher identity: the repository that owns this engine and its workflow.
+publisher:
+  clone_url: https://github.com/devrimcode/documentation-publisher.git
+  ref: main
+  clone_timeout_seconds: 1800
+  allowed_hosts:
+    - github.com
+  auth:
+    mode: none
+
+# Build-source identity: the editable fork is fetched read-only into a temporary subtree.
+# web_url intentionally remains the upstream canonical URL because Keycloak AsciiDoc headers
+# emit source-provenance links to keycloak/keycloak; the adapter maps those to the fork.
+sources:
+  - id: keycloak
+    vcs:
+      provider: git
+      clone_url: https://github.com/devrimcode/keycloak.git
+      web_url: https://github.com/keycloak/keycloak
+      default_ref: main
+      ref_type: branch
+      dispatch_sha_env: PUBLISHER_KEYCLOAK_SOURCE_SHA
+      depth: 1
+      clone_timeout_seconds: 1800
+      submodules: false
+      lfs: false
+      allowed_hosts:
+        - github.com
+      auth:
+        mode: none
+    root: .
+    integration:
+      mode: git_subtree
+      prefix: .publisher-sources/keycloak
+      squash: true
+      history: shallow
+
+# Edit links point to the independently configured Keycloak fork repository.
+# The Publisher repository above contains only the engine/configuration/workflow.
+# The Keycloak source checkout remains the upstream read-only build input.
+authoring_targets:
+  - id: keycloak-fork-authoring
+    provider_label: github
+    web_url: https://github.com/devrimcode/keycloak
+    repository: devrimcode/keycloak
+    ref: main
+    ref_type: branch
+    source_id: keycloak
+    edit_url_template: "{web_url}/edit/{ref}/{path}"
+    mapping:
+      source_prefix: docs/documentation
+      target_prefix: docs/documentation
+      rules: []
+    unresolved_policy: fail
+
+build_tasks:
+  - id: build-keycloak-documentation
+    source_id: keycloak
+    adapter: command
+    working_directory: .
+    working_directory_scope: source
+    argv:
+      - ./mvnw
+      - install
+      - -Dtest=!ExternalLinksTest
+      - -am
+      - -pl
+      - docs/documentation/tests,docs/documentation/dist
+      - -e
+      - -Pdocumentation
+    environment: {}
+    pass_environment:
+      - PATH
+      - HOME
+      - LANG
+      - JAVA_HOME
+      - MAVEN_ARGS
+    secret_environment: []
+    depends_on: []
+    timeout_seconds: 3600
+    retry: 0
+    retry_safe: false
+    retry_delay_seconds: 1
+    outputs:
+      - docs/documentation/target
+
+components:
+  - id: keycloak-documentation
+    title: Keycloak Documentation
+    description: Keycloak documentation built from the configured source revision
+    source_id: keycloak
+    route: keycloak
+    link_adapter: keycloak_asciidoc
+    tasks:
+      - build-keycloak-documentation
+    output_path: docs/documentation/target
+    output_kind: directory
+    index_file: index.html
+    required_output_files:
+      - index.html
+    fallback:
+      mode: error
+    dependencies: []
+    version: current
+    locale: en
+    link_overrides:
+      edit:
+        mode: inherit
+      communication: {}
+
+# The public site origin and project path are explicit; neither is inferred.
+site:
+  base_url: https://devrimcode.github.io
+  base_path: /documentation-publisher
+  output_directory: _site
+  components_root: docs
+  version: current
+  default_version: current
+  default_locale: en
+  component_path_template: "{components_root}/{version}/{route}"
+  version_index_path_template: "{components_root}/{version}/index.html"
+  default_component: keycloak-documentation
+  root_index_target: ""
+  not_found_path: 404.html
+  generate_index: true
+  robots: index
+  canonical_base_url: https://devrimcode.github.io
+  locales:
+    - en
+  versions:
+    - current
+  navigation:
+    - label: Keycloak Documentation
+      href: "keycloak/"
+      group: en:current
+      order: 1
+  static_assets: []
+  trailing_slash: true
+
+# Each link class has an independent incoming-link selector and destination.
+# Changing one target does not affect the publisher checkout or build-source subtree.
+links:
+  edit:
+    mode: override
+    target_id: keycloak-fork-authoring
+    unresolved_policy: fail
+    require_markers: true
+  issues:
+    mode: override
+    source_prefixes:
+      - https://github.com/keycloak/keycloak/issues
+    target_url: https://github.com/keycloak/keycloak
+    url_template: "{target_url}/issues/{path}{query_suffix}{fragment_suffix}"
+    require_markers: true
+    unresolved_policy: fail
+  navigation:
+    mode: override
+    source_prefixes:
+      - https://www.keycloak.org/docs/
+      - /docs/
+    relative_prefixes:
+      - ../
+    source_page_base_url: https://www.keycloak.org/docs/latest/
+    target_url: https://github.com/devrimcode/keycloak
+    target_ref: main
+    url_template: "{target_url}/tree/{target_ref}/{path}{query_suffix}{fragment_suffix}"
+    mapping:
+      strip_leading_segments: 1
+      target_prefix: docs/documentation
+      collapse_index_file: index.html
+      rules: []
+    require_markers: true
+    unresolved_policy: fail
+
+# Each channel is explicitly set to inherit Keycloak's own destination in its source markup.
+# These can later be switched independently to override/disable without changing engine code.
+communication:
+  email:
+    mode: inherit
+  issues:
+    mode: inherit
+  bug_reports:
+    mode: inherit
+  feature_requests:
+    mode: inherit
+  discussions:
+    mode: inherit
+  support:
+    mode: inherit
+  security:
+    mode: inherit
+  community:
+    mode: inherit
+  feedback:
+    mode: inherit
+
+validation:
+  require_no_symlinks: true
+  validate_local_links: true
+  validate_fragments: true
+  validate_css_assets: true
+  validate_edit_links: true
+  validate_communication_links: true
+  validate_external_links: false
+  allowed_external_hosts: []
+  validate_redirect_schemes:
+    - https
+  unresolved_edit_policy: fail
+  require_build_manifest: true
+  max_site_bytes: 1000000000
+  max_files: 200000
+  max_archive_ratio: 1000
+  max_html_depth: 0
+  required_files: []
+
+workspace:
+  temp_root: .publisher-tmp
+  git_user_name: Documentation Publisher (temporary)
+  git_user_email: documentation-publisher@example.invalid
+  cleanup_on_success: true
+  cleanup_on_failure: true
+  fail_on_cleanup_error: true
+  cleanup_retries: 2
+  cleanup_delay_seconds: 0.2
+  keep_failed_workspace: false
+  keep_on_success: false
+  lock_timeout_seconds: 60
+
+# GitHub Pages handoff. The workflow performs the actual upload/deploy.
+publishing_targets:
+  - id: github-pages
+    adapter: artifact
+    output_path: _site
+publishing:
+  target_id: github-pages
+  artifact_name: documentation-publisher-site
+  retention_days: 7
+  dry_run: false
+  atomic: true
+  pre_publish_validation: true
+  timeout_seconds: 600
+
+triggers:
+  manual: true
+  push_branches:
+    - main
+  pull_request: true
+  schedule: []
+  workflow_call: false
+  repository_dispatch:
+    event_type: keycloak-documentation-updated
+    source_id: keycloak
+    source_repository: devrimcode/keycloak
+    source_branch: main
+  paths:
+    - publisher.yml
+    - publisher_engine/**
+    - schemas/**
+    - pyproject.toml
+    - requirements.txt
+    - requirements-dev.txt
+    - publisher.example.yml
+    - .github/workflows/**
+  concurrency_group: documentation-publisher-pages
+  concurrency_group_per_ref: true
+  cancel_in_progress: false
+  deploy_branch: main
+
+workflow:
+  provider: github_actions
+  file: .github/workflows/documentation-publisher.yml
+  config_file: publisher.yml
+  python_version: "3.13"
+  java_version: "25"
+  runs_on: ubuntu-24.04
+  deploy_environment: github-pages
+  build_timeout_minutes: 360
+  deploy_timeout_minutes: 30
+  include_hidden_files: true
+  secrets: {}
+  environment:
+    MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
+  build_permissions:
+    contents: read
+  deploy_permissions:
+    pages: write
+    id-token: write
+    actions: read
+  actions:
+    checkout: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    setup_python: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+    setup_java: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+    upload_pages_artifact: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+    deploy_pages: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

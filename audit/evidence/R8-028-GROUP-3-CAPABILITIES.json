@@ -1,0 +1,79 @@
+{
+  "contract_version": 1,
+  "not_implemented": [
+    "gitlab_workflow_provider",
+    "bitbucket_pipeline_provider",
+    "gitlab_pages_deployment_adapter",
+    "bitbucket_pages_deployment_adapter",
+    "github_repository_api_publisher",
+    "gitlab_repository_api_publisher",
+    "bitbucket_repository_api_publisher",
+    "provider_specific_issue_or_discussion_api_clients"
+  ],
+  "product": "Documentation Publisher v2",
+  "providers": {
+    "authoring_links": {
+      "notes": "provider/provider_label does not select an adapter. The URL is produced by the explicit edit_url_template and shared path mapping/encoding.",
+      "provider_label_semantics": "metadata_only",
+      "provider_specific_adapters": [],
+      "strategy": "edit_url_template"
+    },
+    "communication": {
+      "notes": "Communication URLs use the generic template formatter and configured host allowlists; no GitHub/GitLab/Bitbucket issue or discussion API client is included.",
+      "provider_label_semantics": "metadata_only",
+      "provider_specific_api_adapters": [],
+      "strategies": [
+        "mailto_template",
+        "generic_https_url_template"
+      ]
+    },
+    "component_link_adapters": {
+      "keycloak_asciidoc": {
+        "scope": "Keycloak AsciiDoc xref/link rewriting for the configured edit target.",
+        "status": "implemented"
+      }
+    },
+    "publishing_adapters": {
+      "artifact": {
+        "scope": "Build artifact handoff to the configured workflow; not a remote hosting API client.",
+        "status": "implemented"
+      },
+      "command": {
+        "scope": "Explicit operator-supplied argv with allowlisted environment; no implicit shell or built-in provider API.",
+        "status": "implemented"
+      },
+      "filesystem": {
+        "scope": "Validated local filesystem copy with atomic replacement options.",
+        "status": "implemented"
+      }
+    },
+    "source_vcs": {
+      "git": {
+        "authentication_modes": [
+          "none",
+          "environment",
+          "ssh_agent"
+        ],
+        "integration_modes": [
+          "git_subtree"
+        ],
+        "notes": "Other VCS providers and source materialization modes are not implemented.",
+        "status": "implemented"
+      }
+    },
+    "workflow": {
+      "github_actions": {
+        "capabilities": [
+          "validate-config",
+          "plan",
+          "build",
+          "upload-github-pages-artifact",
+          "deploy-github-pages"
+        ],
+        "deployment_target": "GitHub Pages",
+        "notes": "The generated workflow uses GitHub Actions and the GitHub Pages artifact/deploy actions. It does not publish directly through a GitHub API adapter.",
+        "status": "implemented"
+      }
+    }
+  }
+}

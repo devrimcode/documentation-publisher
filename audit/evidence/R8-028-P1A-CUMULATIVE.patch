@@ -1,0 +1,2748 @@
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/.devcontainer/README.md work-p11/documentation-publisher-v2/.devcontainer/README.md
+--- p11-baseline/documentation-publisher-v2/.devcontainer/README.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/.devcontainer/README.md	2026-11-07 11:04:27.601808578 +0000
+@@ -9,9 +9,9 @@
+ - Python 3.13 aus `mcr.microsoft.com/devcontainers/python:3.13-bookworm`
+ - Git Subtree wird während des Image-Builds als root installiert und gezielt in den von
+   `git --exec-path` gemeldeten aktiven Helper-Pfad verlinkt – kein `GIT_EXEC_PATH`-Override
+-- Git LFS über das offizielle Dev-Container-Feature; automatisches Pull ist deaktiviert
+-- Eclipse Temurin JDK 25 als Standard plus JDK 21 zusätzlich
+-- Maven über das Java-Feature; `MAVEN_ARGS` folgt den Transport-/Retry-Flags des Keycloak-CI-Workflows
++- Git LFS 3.8.1 über das auf Feature 1.2.5 gepinnte Dev-Container-Feature; automatisches Pull ist deaktiviert
++- Eclipse Temurin JDK 25 als Standard plus JDK 21 zusätzlich (Java-Feature 1.8.3)
++- Maven 3.10.0 über das Java-Feature; `MAVEN_ARGS` folgt den Transport-/Retry-Flags des Keycloak-CI-Workflows
+ - Python `.venv` und optionale Installation aus `requirements-dev.txt` oder `requirements.txt`
+ 
+ ## Verwendung im frisch angelegten Repository
+@@ -20,7 +20,7 @@
+ 2. Alle Dateien auf dem Branch speichern, von dem der Codespace erstellt werden soll.
+ 3. Erst danach einen neuen Codespace aus diesem Branch erstellen.
+ 4. Der Image-Build installiert Git Subtree; die Features installieren Java/Maven und Git LFS.
+-5. `postCreateCommand` richtet `.venv` ein; `postStartCommand` prüft die Werkzeuge bei jedem Start.
++5. `postCreateCommand` richtet `.venv` ein; `waitFor: postCreateCommand` wartet dessen Abschluss ab; `postStartCommand` prüft Python 3.13, Java 25 aktiv plus Java 21 zusätzlich, Maven 3.10.0, Git LFS 3.8.1 und Git Subtree bei jedem Start.
+ 
+ Die Dateien können über die GitHub-Weboberfläche angelegt/hochgeladen werden; der Subtree-Installationsschritt hängt nicht von einem ausführbaren Bit einer Repository-Datei ab.
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/.devcontainer/devcontainer.json work-p11/documentation-publisher-v2/.devcontainer/devcontainer.json
+--- p11-baseline/documentation-publisher-v2/.devcontainer/devcontainer.json	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/.devcontainer/devcontainer.json	2026-11-07 10:57:50.442145564 +0000
+@@ -1,14 +1,15 @@
+ {
+   "name": "Documentation Publisher – Codespaces",
+   "features": {
+-    "ghcr.io/devcontainers/features/java:1": {
++    "ghcr.io/devcontainers/features/java:1.8.3": {
+       "version": "25",
+       "additionalVersions": "21",
+       "jdkDistro": "tem",
+-      "installMaven": true
++      "installMaven": true,
++      "mavenVersion": "3.10.0"
+     },
+-    "ghcr.io/devcontainers/features/git-lfs:1": {
+-      "version": "latest",
++    "ghcr.io/devcontainers/features/git-lfs:1.2.5": {
++      "version": "3.8.1",
+       "autoPull": false
+     }
+   },
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/.devcontainer/verify-environment.sh work-p11/documentation-publisher-v2/.devcontainer/verify-environment.sh
+--- p11-baseline/documentation-publisher-v2/.devcontainer/verify-environment.sh	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/.devcontainer/verify-environment.sh	2026-11-07 11:00:39.117321869 +0000
+@@ -12,18 +12,27 @@
+ for tool in python3 git java mvn; do
+   command -v "$tool" >/dev/null 2>&1 || fail "Required command not found: $tool"
+ done
+-python3 - <<'PY'
+-import sys
+-if sys.version_info < (3, 11):
+-    raise SystemExit(f'Python 3.11+ required; found {sys.version.split()[0]}')
+-PY
++PYTHON_LINE="$(python3 --version 2>&1)" || fail 'Python 3 is unavailable.'
++[[ "$PYTHON_LINE" == "Python 3.13."* ]] || fail "Codespaces image must provide Python 3.13 exactly; found: $PYTHON_LINE"
+ 
+ SUBTREE_HELP="$(git subtree -h 2>&1 || true)"
+ [[ "$SUBTREE_HELP" == *"usage: git subtree"* ]] || fail "git subtree is not discoverable through the active Git exec path ($(git --exec-path)). Do not set GIT_EXEC_PATH manually; rebuild the Dev Container and inspect the Dockerfile image-build log."
+-git lfs version >/dev/null 2>&1 || fail 'Git LFS is not installed.'
++LFS_LINE="$(git lfs version 2>&1)" || fail 'Git LFS is not installed.'
++[[ "$LFS_LINE" == git-lfs/3.8.1* ]] || fail "Expected Git LFS 3.8.1; found: $LFS_LINE"
+ 
+ JAVA_LINE="$(java -version 2>&1 | head -n 1)"
+-[[ "$JAVA_LINE" == *'25.'* || "$JAVA_LINE" == *'21.'* ]] || fail "Expected Java 25 (preferred) or 21; found: $JAVA_LINE"
++[[ "$JAVA_LINE" =~ version[[:space:]]\"25([.]|\") ]] || fail "Java 25 must be the active default JDK; found: $JAVA_LINE"
++SDKMAN_DIR="${SDKMAN_DIR:-/usr/local/sdkman}"
++JDK21_FOUND=0
++for candidate in "$SDKMAN_DIR"/candidates/java/21*; do
++  [[ -d "$candidate" && -x "$candidate/bin/java" ]] || continue
++  CANDIDATE_LINE="$("$candidate/bin/java" -version 2>&1 | head -n 1)"
++  if [[ "$CANDIDATE_LINE" =~ version[[:space:]]\"21([.]|\") ]]; then
++    JDK21_FOUND=1
++    break
++  fi
++done
++[[ "$JDK21_FOUND" == "1" ]] || fail "JDK 21 must be installed as an additional SDKMAN candidate under $SDKMAN_DIR/candidates/java"
+ 
+ if [[ -x .venv/bin/python && ( -f requirements-dev.txt || -f requirements.txt ) ]]; then
+   .venv/bin/python - <<'PY'
+@@ -37,11 +46,14 @@
+ PY
+ fi
+ 
+-log "Python: $(python3 --version 2>&1)"
++log "Python: $PYTHON_LINE"
+ log "Git: $(git --version)"
+ log "Git exec path: $(git --exec-path)"
+-log "Java: $JAVA_LINE"
+-log "Maven: $(mvn --version 2>&1 | head -n 1)"
+-log "Git LFS: $(git lfs version)"
++log "Java default: $JAVA_LINE"
++log "Java 21 additional JDK: installed"
++MAVEN_LINE="$(mvn --version 2>&1 | head -n 1)"
++[[ "$MAVEN_LINE" == *"Apache Maven 3.10.0"* ]] || fail "Expected Maven 3.10.0; found: $MAVEN_LINE"
++log "Maven: $MAVEN_LINE"
++log "Git LFS: $LFS_LINE"
+ log 'git subtree: available through active Git exec path'
+ log 'Environment verification passed.'
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/.gitignore work-p11/documentation-publisher-v2/.gitignore
+--- p11-baseline/documentation-publisher-v2/.gitignore	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/.gitignore	2026-11-07 10:57:08.685302647 +0000
+@@ -0,0 +1,26 @@
++# Python bytecode and test caches
++__pycache__/
++*.py[cod]
++.pytest_cache/
++.coverage
++htmlcov/
++
++# Local virtual environments
++.venv/
++venv/
++.env
++.env.*
++!.env.example
++
++# Publisher-generated build/runtime data
++_site/
++_site-smoke/
++.publisher-tmp/
++.publisher-sources/
++test-results/
++*.log
++
++# Editor / OS noise
++.DS_Store
++Thumbs.db
++.vscode/
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/R8-027-DEVCONTAINER-STATUS.md work-p11/documentation-publisher-v2/R8-027-DEVCONTAINER-STATUS.md
+--- p11-baseline/documentation-publisher-v2/R8-027-DEVCONTAINER-STATUS.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/R8-027-DEVCONTAINER-STATUS.md	2026-11-07 11:15:44.027186353 +0000
+@@ -14,17 +14,19 @@
+ - Python 3.13 from `mcr.microsoft.com/devcontainers/python:3.13-bookworm`.
+ - `git-subtree` installed from Debian package during Docker image build and linked into the
+   directory reported by `git --exec-path`; no `GIT_EXEC_PATH` override.
+-- Git LFS Feature with `autoPull: false`.
+-- Eclipse Temurin Java 25 as default, Java 21 additionally installed, and Maven.
++- Git LFS 3.8.1 via pinned Feature 1.2.5 with `autoPull: false`.
++- Eclipse Temurin Java 25 as default and Java 21 additionally installed via pinned Feature 1.8.3; Maven 3.10.0.
+ - `MAVEN_ARGS` mirrors the current Keycloak CI HTTP retry/connection settings. The Keycloak
+   documentation build should continue to use the source repository's `./mvnw` wrapper.
+ - `postCreateCommand` creates `.venv` and installs `requirements-dev.txt` or `requirements.txt`
+   if present. A fresh repository with only `.devcontainer/` can still finish provisioning.
+ - `waitFor: postCreateCommand` waits for `.venv` setup before Codespaces reports creation as ready.
+-- `postStartCommand` verifies Python, Git/Subtree, Git LFS, Java and Maven at each start.
++- `postStartCommand` verifies exact Python 3.13, active Java 25 plus installed Java 21, Maven 3.10.0, Git LFS 3.8.1 and Git Subtree at each start.
+ 
+ The Git Subtree setup is in a Dockerfile, not a repository-local Feature installer. This avoids
+ relying on an executable bit being preserved when files are added through GitHub's web UI.
++The Python base image is tag-pinned but not digest-pinned; the APT `git-subtree` package is not
++snapshot-pinned. Full bit-identical image rebuilds are therefore not yet guaranteed.
+ 
+ ## Local validation
+ 
+@@ -32,12 +34,15 @@
+ - Dockerfile content is checked by static regression tests; no Docker/Podman runtime is
+   available here to build the image.
+ - Lifecycle and acceptance shell scripts pass `bash -n`.
+-- Active configuration tests: 9/9 pass.
+-- Main regression excluding `tests/test_process.py`: 203 pass, 1 skipped, 53 subtests pass.
+-- `tests/test_process.py`: 6/6 pass in a separate run; combined total 209 pass and 1 skip.
+-- The local acceptance harness reports exactly two host blockers: Git LFS and Maven are missing
+-  from this execution host. The rest of the toolchain, CLI and config/plan checks pass. Those two
+-  tools are expected to be provisioned by the Dockerfile/Features in the actual Codespace.
++- Active Dev Container configuration tests: 12/12 pass.
++- Runtime verifier tests with positive/negative tool doubles: 5/5 pass.
++- Main regression excluding `tests/test_process.py`: 218 pass, 1 skipped, 73 subtests pass.
++- `tests/test_process.py`: 6/6 pass in a separate run; combined total 224 pass and 1 skip.
++- The unmodified local host acceptance reports four expected toolchain blockers: Git LFS is
++  absent, Java 21 (not 25) is active, no additional SDKMAN Java-21 candidate is present, and
++  Maven is absent. Python 3.13, Git/Subtree, CLI and smoke config/plan checks pass. The complete
++  Codespaces starter passed with test-doubles for only those missing/wrong host tools; this is
++  not a live Docker or Codespaces build.
+ 
+ ## External acceptance still required
+ 
+@@ -51,3 +56,8 @@
+ 
+ It must pass without manually setting `GIT_EXEC_PATH`. Until this real Codespace check passes,
+ R8-027 remains externally pending. No remote repository or user Codespace was modified here.
++
++
++## R8-028-P1A – stricter toolchain verification
++
++The first R8-028 correction group pins Java Feature 1.8.3, Git-LFS Feature 1.2.5, Git LFS 3.8.1 and Maven 3.10.0; the verifier requires Python 3.13, Java 25 as active default plus Java 21 additionally installed. It no longer accepts Java 21 as the default. Exact local negative/positive verifier cases are covered in `tests/test_devcontainer_runtime.py` (5/5). Real container build and user Codespace acceptance remain open.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/R8-CORRECTION-STATUS.md work-p11/documentation-publisher-v2/R8-CORRECTION-STATUS.md
+--- p11-baseline/documentation-publisher-v2/R8-CORRECTION-STATUS.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/R8-CORRECTION-STATUS.md	2026-11-07 11:14:03.298189046 +0000
+@@ -48,7 +48,7 @@
+ - `python -m unittest discover -s tests -v`: **142 tests passed** in the isolated correction-package test environment (140 existing tests plus 2 Dev Container feature tests).
+ - `python -m py_compile publisher_engine/*.py tests/*.py`: passed.
+ - CLI version: `2.0.10-dev`; CLI help: passed.
+-- `python -m publisher_engine.cli validate-config --config publisher.keycloak.example.yml`: passed (1 source, 1 component, 1 build task).
++- `python -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml`: passed (1 source, 1 component, 1 build task).
+ - JSON Schema metaschema check: passed.
+ - A local Git-subtree Project-Site fixture build passed; its root-relative HTML references and CSS references were rewritten, the CSS/image assets were included, canonical URLs contained the base path, and local-link validation passed.
+ - User Codespace Keycloak smoke build passed: source commit `30cf683465a1ddf7151462d7f480d6d17f986844`, Maven task succeeded in 110.005 seconds, 362 edit-link occurrences / 359 unique targets, and 359/359 targets matched files in the source commit Git tree.
+@@ -104,3 +104,30 @@
+ - No live GitHub Actions run, artifact upload or Pages deployment was performed.
+ 
+ P3 does not close P4/P5 workflow issues or the remaining R8 acceptance gates. This remains a development candidate and is not release-ready.
++
++
++## R8-028 – Sicherheits- und Toolchain-Korrekturgruppe 1
++
++**Status: IMPLEMENTIERT UND LOKAL REGRESSIONSGEPRÜFT (P12 / R8-028-P1A).** Diese Korrekturen basieren auf dem tatsächlich wiederhergestellten P11-Archiv, nicht auf ungesicherten Zwischenmeldungen.
++
++- Repository-/Source-/Communication-`allowed_hosts` lehnen Wildcards ab; Einträge müssen vollständige, syntaktisch gültige Hostnamen sein. Die generische Vorlage verwendet explizite Host-Platzhalter statt `*`.
++- Live-Publishing (`publishing.dry_run: false`) lehnt reservierte Example-/Test-Domains einschließlich Subdomains und nicht-globale IP-Ursprünge ab. Dieselben reservierten URLs bleiben für ausdrücklich aktivierte Dry-Run-Smoke-Fixtures zulässig.
++- `publisher.keycloak.example.yml` wurde in `publisher.keycloak.smoke.yml` umbenannt und im Datei-Header als projektbezogene Smoke-Fixture mit festen Repository-/Branch-Annahmen und reservierter `example.invalid`-Origin gekennzeichnet.
++- Root-`.gitignore` deckt Python-/Pytest-Caches, virtuelle Umgebungen, Testresultate und Publisher-Arbeitsverzeichnisse ab.
++- Dev-Container-Feature-Versionen sind festgesetzt (Java Feature 1.8.3, Git-LFS Feature 1.2.5; Temurin 25 aktiv plus 21, Maven 3.10.0, Git LFS 3.8.1). Der Verifier fordert exakte Versionen und weist insbesondere Java 21 als falsches Standard-Java zurück.
++- Der Codespaces-Akzeptanzstarter prüft dieselben Versionen und hält die generische Vorlage als bewusst fail-closed fest.
++
++Der tatsächliche Docker-/Codespaces-Neuaufbau ist nicht erfolgt; R8-027 bleibt extern offen. Die Hauptsuite besteht mit 218 passed/1 skipped, die Prozesssuite separat mit 6/6; 48 gezielte Tests bestehen (als Teilmenge nicht zusätzlich gezählt). Aggregiert: 224 passed/1 skipped/0 failed. Ein differentieller Testlauf auf dem unveränderten P11-Quellstand schlägt bei den vier neuen Host-Allowlist-/Reserved-Origin-Tests erwartungsgemäß fehl (11 Assertion failures/subfailures, 1 Dry-Run-Kontrolle grün); damit reproduzieren die Regressionen den alten Fehler. Der aktuelle Nachweis liegt in `audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md` und `audit/evidence/R8-028-P1A-*`.
++
++
++## Current P12 / R8-028-P1A acceptance status
++
++The historical status entries above describe earlier correction packages. The first current P12 security/toolchain group is implemented and locally regression-tested:
++
++- 31/31 configuration/security tests; 12/12 Dev Container configuration tests; 5/5 runtime-verifier positive/negative tests (48/48 focused).
++- Main suite: 218 passed, 1 skipped, 73 subtests. Process suite: 6/6 passed in a separate invocation. Combined: 224 passed, 1 skipped, 0 failed (focused tests are a subset, not an additional count).
++- Four new host-Allowlist/reserved-origin regression tests were run against unchanged P11 and reproduced the old behavior (11 assertion failures/subfailures, one Dry-Run control passed); current P12 passes.
++- Codespaces starter passes end-to-end with test doubles for host-missing/wrong tools. Raw host acceptance has four blockers: Git LFS absent, Java 21 active instead of Java 25, additional SDKMAN Java 21 absent, Maven absent.
++- Actual Docker/Codespaces build and browser integrations were not run. Base image tag and apt `git-subtree` package remain mutable. The true Git-LFS object-transfer test remains skipped.
++
++Canonical current evidence: `audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md` and `audit/evidence/R8-028-P1A-*`. This is not a production release or closure of the remaining R8-028 items.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/R8-P11-CUMULATIVE-STATUS.md work-p11/documentation-publisher-v2/R8-P11-CUMULATIVE-STATUS.md
+--- p11-baseline/documentation-publisher-v2/R8-P11-CUMULATIVE-STATUS.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/R8-P11-CUMULATIVE-STATUS.md	2026-11-07 11:11:48.274903987 +0000
+@@ -78,7 +78,7 @@
+ 
+ - Python-Bytecode-Kompilierung von `publisher_engine/*.py` und `tests/*.py`: bestanden.
+ - CLI-Version: `2.0.10-dev`.
+-- `publisher.keycloak.example.yml`: `validate-config` erfolgreich (1 Source, 1 Component, 1 Task).
++- `publisher.keycloak.smoke.yml`: `validate-config` erfolgreich (1 Source, 1 Component, 1 Task).
+ - CLI-`plan` für `keycloak-docs`: wählt genau `keycloak-docs`, die Source `keycloak` und Task `build-keycloak-docs`.
+ - Produktionscode-Scan: keine direkten `subprocess.run`, `capture_output=True` oder direkten stdout/stderr-Pipe-Aufrufe außerhalb des zentralen `publisher_engine/process.py` gefunden.
+ 
+@@ -141,3 +141,31 @@
+ Feature-Datei, wenn die Dateien vor dem ersten Codespace-Start über GitHub hochgeladen werden.
+ Der vollständige Ordner ist als separates Overlay-Archiv verfügbar. Der tatsächliche Build im
+ GitHub-Codespace muss nach dem Speichern im neuen Repository noch stattfinden.
++
++
++## First configuration-safety correction group (working tree)
++
++- Generic publisher/source example now requires explicit `PUBLISHER_ALLOWED_HOST` and `SOURCE_ALLOWED_HOST` values; wildcard host entries are rejected by semantic validation for repository and communication allowlists.
++- `publishing.dry_run: false` rejects reserved example/test public origins in `site.base_url` and `site.canonical_base_url`.
++- The project-specific Keycloak configuration is renamed to `publisher.keycloak.smoke.yml` and explicitly documented as smoke-only.
++- `.devcontainer/verify-environment.sh` now requires Python 3.13, active Java 25 and an installed Java 21 SDKMAN candidate.
++- Root `.gitignore` covers Python/test caches, virtual environments and Publisher-generated outputs.
++
++This section describes source changes in the current working candidate. The next regression run and archive verification determine whether this group is accepted.
++
++
++## R8-028 – Sicherheits- und Toolchain-Korrekturgruppe 1
++
++**Status: IMPLEMENTIERT UND LOKAL REGRESSIONSGEPRÜFT.** Diese Korrekturen basieren auf dem tatsächlich wiederhergestellten P11-Archiv, nicht auf ungesicherten Zwischenmeldungen.
++
++- Repository-/Source-/Communication-`allowed_hosts` lehnen Wildcards ab; Einträge müssen vollständige, syntaktisch gültige Hostnamen sein. Die generische Vorlage verwendet explizite Host-Platzhalter statt `*`.
++- Live-Publishing (`publishing.dry_run: false`) lehnt reservierte Example-/Test-Domains einschließlich Subdomains und nicht-globale IP-Ursprünge ab. Dieselben reservierten URLs bleiben für ausdrücklich aktivierte Dry-Run-Smoke-Fixtures zulässig.
++- `publisher.keycloak.example.yml` wurde in `publisher.keycloak.smoke.yml` umbenannt und im Datei-Header als projektbezogene Smoke-Fixture mit festen Repository-/Branch-Annahmen und reservierter `example.invalid`-Origin gekennzeichnet.
++- Root-`.gitignore` deckt Python-/Pytest-Caches, virtuelle Umgebungen, Testresultate und Publisher-Arbeitsverzeichnisse ab.
++- Dev-Container-Feature-Versionen sind festgesetzt (Java Feature 1.8.3, Git-LFS Feature 1.2.5; Temurin 25 aktiv plus 21, Maven 3.10.0, Git LFS 3.8.1). Der Verifier fordert exakte Versionen und weist insbesondere Java 21 als falsches Standard-Java zurück.
++- Der Codespaces-Akzeptanzstarter prüft dieselben Versionen und hält die generische Vorlage als bewusst fail-closed fest.
++
++Der tatsächliche Docker-/Codespaces-Neuaufbau ist nicht erfolgt; R8-027 bleibt extern offen. Der lokale Teststatus dieser Korrekturgruppe wird in `audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md` und den `audit/evidence/R8-028-P1A-*`-Dateien belegt.
++
++**Aktueller Regressionstand:** Hauptsuite 218 bestanden / 1 übersprungen / 73 Subtests; Prozesssuite separat 6/6 bestanden; gezielte Korrekturgruppe 48/48 bestanden. Aggregiert: **224 bestanden, 1 übersprungen, 0 fehlgeschlagen** (der gezielte 48er-Lauf ist eine Teilmenge der Hauptsuite, nicht zusätzlich zu zählen). Der Skip ist der echte Git-LFS-Objekttransfer.
++
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/R8-P11-PACKAGE-MANIFEST.md work-p11/documentation-publisher-v2/R8-P11-PACKAGE-MANIFEST.md
+--- p11-baseline/documentation-publisher-v2/R8-P11-PACKAGE-MANIFEST.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/R8-P11-PACKAGE-MANIFEST.md	2026-11-07 11:16:24.820345167 +0000
+@@ -1,4 +1,4 @@
+-# Documentation Publisher 2.0.10-dev – P11 Codespaces test candidate
++# Documentation Publisher 2.0.10-dev – P12 R8-028-P1A cumulative correction candidate
+ 
+ This is the complete reconstructed project tree with an **active** GitHub Codespaces
+ configuration. It contains `.devcontainer/devcontainer.json` (not an example-only file),
+@@ -7,24 +7,25 @@
+ 
+ ## Provenance
+ 
+-The available cumulative full-project source baseline was the verified P3 archive. Earlier
+-P4–P10 full project archives were not present in the retained file set. P4–P11 were therefore
++The available cumulative full-project source baseline was the verified P3 archive. Earlier P4–P10 full project archives were not present in the retained file set. P4–P11 were
+ reconstructed from the recorded defect descriptions and reports; this is not a byte-identical
+-restoration of earlier intermediate trees. That limitation is also stated in
+-`R8-P11-CUMULATIVE-STATUS.md`.
++restoration of earlier intermediate trees. The actual P11 ZIP recovered for this P12 work is
++`documentation-publisher-v2-r8-2.0.10-dev-P11-ACTIVE-DEVCONTAINER.zip`, SHA-256
++`a35bcfe52c130a8505422806f58fc429f7bbad8b0fbcae1d89722d35ba212936`. P12/P1A changes are
++applied to that exact recovered tree, not reconstructed from a patch-only approximation.
++
++## Current R8-028-P1A test record
++
++- Main regression excluding `tests/test_process.py`: **218 passed, 1 skipped, 73 subtests** – `audit/evidence/R8-028-P1A-MAIN-REGRESSION.txt`.
++- Process-group suite, separate invocation with `ResourceWarning` as error: **6/6 passed** – `audit/evidence/R8-028-P1A-PROCESS-REGRESSION.txt`.
++- Targeted first correction group: **48/48 passed** (31 config/security, 12 active Dev Container config, 5 runtime verifier) – `audit/evidence/R8-028-P1A-TARGETED-TESTS.txt` and the three split logs.
++- Complete `scripts/test-in-codespaces.sh` run with transparent test-doubles for host-missing Java 25/JDK 21, Git LFS and Maven: `audit/evidence/R8-028-P1A-CODESPACES-STARTER-TEST-DOUBLE-OUTPUT.txt`.
++- Unmodified local-host environment blockers: `audit/evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt`.
++- Differential P11 baseline proof: `audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt` and its summary.
++- Exact test-double starter sublogs: `audit/evidence/R8-028-P1A-CODESPACES-STARTER-ENVIRONMENT-TEST-DOUBLE.txt`, `...-MAIN-TEST-DOUBLE.txt`, `...-PROCESS-TEST-DOUBLE.txt`.
++- Detailed changes and limits: `audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md`.
+ 
+-## Test record
+-
+-- Current main regression excluding `tests/test_process.py` (203 passed, 1 skipped): see `audit/evidence/P11-CURRENT-COMPLETE-REGRESSION-209-PASS.txt`.
+-- P11 process module, run separately (6 passed): see the same combined evidence file and `audit/evidence/R8-022-PROCESS-REGRESSION.txt`.
+-- Active Dev Container tests: see `audit/evidence/R8-027-DEVCONTAINER-TESTS.txt` (9/9), including Dockerfile/static path, same-path helper protection, separate Codespaces test-runner structure and clean-repository lifecycle checks.
+-- Static JSON/shell/Python checks: see `audit/evidence/R8-027-STATIC-VALIDATION.txt`.
+-- R8-027 implementation and outstanding live Codespaces acceptance: see `R8-027-DEVCONTAINER-STATUS.md` and `audit/R8-027-ACTIVE-DEVCONTAINER-TEST-REPORT.md`.
+-
+-The Git-LFS real-object transfer remains the one skipped test. Native Windows process-tree
+-acceptance, actual GitHub Codespaces image build/rebuild, Project Pages/Keycloak browser
+-acceptance and full 191-field configuration-effectiveness acceptance remain open. This is a
+-test candidate, not a production release.
++The one skipped regression remains the real Git-LFS object transfer. The Dev Container Python base image is currently tag-pinned but not digest-pinned, and the APT `git-subtree` package is not pinned to a Debian snapshot version; exact image rebuild reproducibility is not claimed. Actual Docker/Codespaces image creation, Windows process-tree acceptance, Project Pages/Keycloak browser acceptance and remaining R8-028 option behavior gates remain open. This is a cumulative development/test candidate, not a production release.
+ 
+ ## Install the Codespaces config before creating a Codespace
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/R8-P3-WORKFLOW-OUTPUT-REPORT.md work-p11/documentation-publisher-v2/R8-P3-WORKFLOW-OUTPUT-REPORT.md
+--- p11-baseline/documentation-publisher-v2/R8-P3-WORKFLOW-OUTPUT-REPORT.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/R8-P3-WORKFLOW-OUTPUT-REPORT.md	2026-11-07 10:57:08.684949713 +0000
+@@ -68,7 +68,7 @@
+ - Targeted P3 module: **4 tests passed, 0 failed**.
+ - `python -m py_compile publisher_engine/*.py tests/*.py`: passed.
+ - CLI version: `2.0.10-dev`.
+-- `python -m publisher_engine.cli validate-config --config publisher.keycloak.example.yml`: passed (1 source, 1 component, 1 task).
++- `python -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml`: passed (1 source, 1 component, 1 task).
+ - Generated YAML was parsed and the output contract asserted: `jobs.build.outputs.deploy == steps.decision.outputs.deploy` and `jobs.deploy.if == needs.build.outputs.deploy == 'true'`.
+ - The GitHub Actions job-output mapping follows GitHub's documented `jobs.<job_id>.outputs` and `needs.<job_id>.outputs` contract: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/README.md work-p11/documentation-publisher-v2/README.md
+--- p11-baseline/documentation-publisher-v2/README.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/README.md	2026-11-07 11:04:27.602094570 +0000
+@@ -17,7 +17,7 @@
+ 
+ ## GitHub Codespaces
+ 
+-An active Codespaces configuration is included at `.devcontainer/devcontainer.json` (not an example-only file). It provisions Python 3.13, Java 25 with Java 21 additionally available, Maven, Git LFS, and the Dockerfile-based Git Subtree installation into the active Git exec path. See [`.devcontainer/README.md`](.devcontainer/README.md) before creating a new Codespace.
++An active Codespaces configuration is included at `.devcontainer/devcontainer.json` (not an example-only file). It provisions Python 3.13, Temurin Java 25 with Java 21 additionally available, Maven 3.10.0, Git LFS 3.8.1, and the Dockerfile-based Git Subtree installation into the active Git exec path. The post-start verifier rejects version drift and requires Python 3.13, Java 25 active plus Java 21 installed. See [`.devcontainer/README.md`](.devcontainer/README.md) before creating a new Codespace.
+ 
+ ## Requirements
+ 
+@@ -41,7 +41,7 @@
+ 5. Configure the source-to-authoring path mapping and choose `inherit`, `override`, or `disable` for edit/communication links.
+ 6. Configure the publishing adapter and workflow only if you intend to use them.
+ 
+-The example intentionally contains placeholders and **must fail validation until completed**.
++The generic example intentionally contains unresolved URL and exact-host placeholders and **must fail validation until completed**. Wildcard host allowlists and malformed exact hostnames are rejected; add only actual publisher/source hosts you reviewed. Live publishing also rejects reserved example/test origins and non-global IP origins; keep those only in explicit dry-run fixtures. The Keycloak file is named `publisher.keycloak.smoke.yml` because it is project-specific and uses `https://example.invalid`; it is a dry-run fixture, not a live deployment config.
+ 
+ ## CLI
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/TEST-REPORT-2.0.10-dev.md work-p11/documentation-publisher-v2/TEST-REPORT-2.0.10-dev.md
+--- p11-baseline/documentation-publisher-v2/TEST-REPORT-2.0.10-dev.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/TEST-REPORT-2.0.10-dev.md	2026-11-07 11:11:48.275018750 +0000
+@@ -1,3 +1,5 @@
++> **Historischer Testbericht:** Dieser Bericht gehört zum früheren P11-Ausgangsstand vor R8-028-P1A. Die frühere Datei `publisher.keycloak.example.yml` wurde im aktuellen Kandidaten als `publisher.keycloak.smoke.yml` klar als Smoke-Fixture umbenannt. Maßgeblich für den aktuellen Stand ist `audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md`.
++
+ # Test report – Documentation Publisher 2.0.10-dev
+ 
+ ## Result
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/TEST-REPORT-2.0.9-dev.md work-p11/documentation-publisher-v2/TEST-REPORT-2.0.9-dev.md
+--- p11-baseline/documentation-publisher-v2/TEST-REPORT-2.0.9-dev.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/TEST-REPORT-2.0.9-dev.md	2026-11-07 11:11:48.275057639 +0000
+@@ -1,3 +1,5 @@
++> **Historischer Testbericht:** Dieser Bericht dokumentiert 2.0.9-dev und ist kein aktueller Nachweis für den P12/R8-028-Kandidaten.
++
+ # Test report – Documentation Publisher 2.0.9-dev
+ 
+ ## Result
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/R8-027-ACTIVE-DEVCONTAINER-TEST-REPORT.md work-p11/documentation-publisher-v2/audit/R8-027-ACTIVE-DEVCONTAINER-TEST-REPORT.md
+--- p11-baseline/documentation-publisher-v2/audit/R8-027-ACTIVE-DEVCONTAINER-TEST-REPORT.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/R8-027-ACTIVE-DEVCONTAINER-TEST-REPORT.md	2026-11-07 11:15:44.027328798 +0000
+@@ -12,8 +12,8 @@
+ - Debian `git-subtree` package installed during image build and made discoverable through the
+   active `git --exec-path`; no global `GIT_EXEC_PATH` is changed. If the package already places
+   the helper at that exact path, the Dockerfile leaves the existing executable untouched.
+-- Official Git LFS Feature with automatic pull disabled.
+-- Temurin Java 25 default plus Java 21 additional JDK; Maven enabled.
++- Pinned Git LFS Feature 1.2.5 installing Git LFS 3.8.1 with automatic pull disabled.
++- Temurin Java 25 default plus Java 21 additional JDK via pinned Java Feature 1.8.3; Maven 3.10.0 pinned.
+ - Keycloak CI Maven connection/retry settings in `MAVEN_ARGS`; Keycloak itself continues to use
+   the checked-in `./mvnw` wrapper.
+ - `.venv` creation and conditional Python requirements installation at `postCreateCommand`.
+@@ -66,3 +66,20 @@
+ 
+ Until those steps pass in the real Codespace, R8-027 is implemented in this project candidate
+ but remains externally pending.
++
++
++## R8-028-P1A addendum – exact toolchain and origin safety
++
++The 9/9, 203/1 and 209/1 counts in the original report above are historical P11 values and are superseded by the current values below.
++
++The active environment contract is now pinned to Java Feature 1.8.3 (Temurin 25 default,
++Java 21 additional, Maven 3.10.0) and Git-LFS Feature 1.2.5 (Git LFS 3.8.1). The environment
++verifier checks exact Python 3.13, active Java 25, the additional Java 21 SDKMAN candidate,
++Maven 3.10.0 and Git LFS 3.8.1. Five runtime verifier tests prove both a valid toolchain and
++rejection of Java 21 as the default, missing JDK 21, Python 3.12, and incorrect LFS/Maven versions.
++
++Current local regression: 218 passed + 1 skipped in the main suite; 6/6 process tests in a
++separate run; 48/48 targeted first-group tests (31 security + 12 config + 5 runtime). The full Codespaces starter passed with test
++doubles for host-missing/wrong Java/LFS/Maven. The raw local host run records four blockers;
++no Docker or live GitHub Codespace build was performed. See
++`R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md` and `evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt`. A differential run against the unchanged P11 baseline reproduced 11 old-behavior assertion failures/subfailures, while the Dry-Run control remained green; see `evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt`.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md work-p11/documentation-publisher-v2/audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md
+--- p11-baseline/documentation-publisher-v2/audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/R8-028-P1A-SECURITY-TOOLCHAIN-REPORT.md	2026-11-07 11:16:24.820534494 +0000
+@@ -0,0 +1,110 @@
++# R8-028 / P1A – Sicherheits- und Toolchain-Korrekturgruppe 1
++
++**Projektstand:** Documentation Publisher `2.0.10-dev`, kumulativer Kandidat P12 auf Basis des wiederhergestellten P11-Archivs  
++**Prüfdatum:** 2026-11-07  
++**P11-Basisarchiv SHA-256:** `a35bcfe52c130a8505422806f58fc429f7bbad8b0fbcae1d89722d35ba212936`
++
++## 1. Was in dieser Gruppe geändert wurde
++
++### Repository-Host-Allowlisten
++
++- `publisher.allowed_hosts`, `sources[].vcs.allowed_hosts`, globale Communication-Allowlisten und komponentenspezifische Communication-Allowlisten lehnen `*` und `*.`-Muster ab.
++- Einträge werden auf vollständige Hostnamen geprüft: keine Scheme-/Path-/Port-/Credential-Bestandteile, keine leeren Labels, keine Labels mit führendem/abschließendem Bindestrich und keine ungültigen Host-Längen.
++- Repository-URL-Prüfung erlaubt keinen Wildcard-Bypass.
++- Die generische `publisher.example.yml` verwendet `<PUBLISHER_ALLOWED_HOST>` und `<SOURCE_ALLOWED_HOST>` statt `*`. Die Vorlage bleibt absichtlich nicht lauffähig, bis sämtliche Platzhalter konkret ersetzt wurden.
++
++### Live-Publishing mit reservierten oder nicht öffentlichen Origins
++
++- `publishing.dry_run: false` blockiert reservierte Example-/Test-Domains einschließlich Subdomains (`.example`, `.invalid`, `.test`, `.localhost`, `example.com`, `example.net`, `example.org`).
++- Nicht-globale IP-Ursprünge (Loopback, private, Link-Local, Dokumentations-, Multicast- und sonstige nicht globale IP-Bereiche) werden ebenfalls blockiert.
++- `site.base_url` und `site.canonical_base_url` werden beide geprüft.
++- Explizite Dry-Run-Fixtures dürfen diese reservierten Origins weiterhin verwenden; der Keycloak-Smoke-Plan bleibt damit verwendbar.
++
++### Beispiel- und Smoke-Konfigurationen
++
++- `publisher.keycloak.example.yml` wurde in `publisher.keycloak.smoke.yml` umbenannt.
++- Der Datei-Header nennt die tatsächlichen Annahmen (konkretes Publisher-Repository, Upstream Keycloak `main`, reservierte `https://example.invalid`-Origin), hält `publishing.dry_run: true` fest und erklärt die Datei ausdrücklich als projektbezogene Smoke-Fixture, nicht als generische oder Live-Deployment-Vorlage.
++- Der Codespaces-Harness validiert diese Smoke-Datei und erzeugt ihren Komponentenplan unter dem neuen Namen.
++
++### Entwicklungsumgebung und Repository-Hygiene
++
++- Root-`.gitignore` ignoriert Python-/Pytest-Caches, `.venv`, Testresultate sowie Publisher-generierte Arbeitsverzeichnisse.
++- Dev-Container-Feature-Versionen sind explizit gepinnt: Java Feature `1.8.3`, Git-LFS-Feature `1.2.5`, Git LFS `3.8.1`, Temurin Java `25` als Standard plus Java `21`, Maven `3.10.0`. Die Python-Basisimage-Referenz ist derzeit tag-, nicht digest-gepinnt; das APT-Paket `git-subtree` ist nicht auf Snapshot/Version fixiert. Vollständige bit-identische Reproduzierbarkeit ist damit noch nicht erreicht.
++- `.devcontainer/verify-environment.sh` fordert Python `3.13` exakt, aktives Java `25`, einen zusätzlich installierten SDKMAN-JDK-21-Kandidaten, Git LFS `3.8.1`, Maven `3.10.0` und `git subtree` im aktiven Git-Exec-Pfad.
++- `scripts/codespaces_acceptance.py` prüft denselben Toolchain-Vertrag, dazu Generic-Template-Fail-Closed-Verhalten, Keycloak-Smoke-Konfiguration und Smoke-Buildplan.
++
++## 2. Reproduzierbare Regression
++
++| Testgruppe | Ergebnis |
++|---|---:|
++| Konfigurations-/Sicherheitsregression | 31/31 bestanden |
++| Devcontainer-Konfigurationsregression | 12/12 bestanden |
++| Devcontainer-Runtime-Verifier mit positiven und negativen Test-Doubles | 5/5 bestanden |
++| Gezielte Korrekturgruppe zusammen | 48/48 bestanden |
++| Hauptregressionssuite, ohne `tests/test_process.py` | 218 bestanden, 1 übersprungen, 73 Subtests |
++| Prozessgruppen-/Subprocess-Suite, separat | 6/6 bestanden, `ResourceWarning` als Fehler |
++| Gesamtergebnis über getrennte Haupt- und Prozessläufe | **224 bestanden, 1 übersprungen, 0 fehlgeschlagen** |
++
++Der eine Skip bleibt der echte Git-LFS-Objekttransfer. Er wurde nicht als bestanden gezählt.
++
++Die vollständigen Ausgaben liegen in `audit/evidence/R8-028-P1A-*.txt`.
++
++## 3. Differentieller Vorher-/Nachher-Nachweis
++
++Die vier neuen Runtime-Regressionsfälle wurden zusätzlich auf einer frisch entpackten, unveränderten P11-Baseline ausgeführt (nur das neue Testmodul wurde hineinkopiert; Produktionscode blieb unverändert). Ergebnis: **11 erwartete Assertion-Fehlschläge/Subfailures, 1 Dry-Run-Kontrolle bestanden**. Die Wildcard-Allowlisten wurden akzeptiert und reservierte Live-Origins wurden nicht blockiert. Das Baseline-Protokoll liegt in `audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt`. Auf P12 bestehen die korrigierten Fälle in der 31er Konfigurations-/Sicherheitsgruppe.
++
++## 4. Codespaces-Teststarter
++
++`bash scripts/test-in-codespaces.sh` wurde Ende-zu-Ende mit Test-Doubles für die vier auf dem Host fehlenden Toolchain-Komponenten ausgeführt:
++
++- Git LFS `3.8.1`
++- aktives Java `25`
++- zusätzlicher SDKMAN-JDK `21`
++- Maven `3.10.0`
++
++Python `3.13.5`, Git `2.47.3`, Git Subtree, Publisher-CLI, YAML-/Schema-Validierung, Smoke-Plan und beide Pytest-Gruppen wurden tatsächlich lokal ausgeführt. Der Acceptance-Teil meldete mit den Test-Doubles `Failed/blocked checks: 0`; Hauptsuite und Prozesssuite bestanden mit den oben genannten Zahlen.
++
++Das ist ein Nachweis des Teststarters und seiner Prüfpfade, **kein** Nachweis einer echten Feature-Installation oder eines Docker-/Codespaces-Image-Builds.
++
++## 5. Unverfälschter Host-Check und offene Abnahme
++
++Der separate Acceptance-Lauf ohne Test-Doubles meldete vier echte Host-Blockaden:
++
++1. `git lfs` ist auf dem Host nicht installiert.
++2. Java `21.0.12.1` ist aktiv; die Devcontainer-Konfiguration verlangt Java `25` als Standard.
++3. Unter dem erwarteten SDKMAN-Verzeichnis wurde kein zusätzlich installierter Java-21-Kandidat gefunden.
++4. Maven ist auf dem Host nicht installiert.
++
++Python `3.13.5`, Git `2.47.3`, Git Subtree, CLI-Version, Konfigurationsvalidierung, Smoke-Plan und Python-Kompilierung bestanden.
++
++Docker/Podman ist nicht verfügbar. Deshalb bleiben folgende externe Grenzen offen:
++
++- echter Build des Dev-Container-Dockerfiles und Installation der gepinnten Features;
++- echter GitHub-Codespaces-Neustart aus einem Branch, der `.devcontainer/` enthält;
++- echte Git-LFS-Objektübertragung;
++- Project-Pages-/Keycloak-Browser- und Editor-Abnahme;
++- native Windows-Prozessbaum-Abnahme.
++
++R8-027 ist damit in der Konfiguration und dem Verifier verschärft, aber extern noch nicht abgenommen. R8-017 und die genannten Browser-/Plattformgates bleiben offen.
++
++## 6. Provenienz und Seiteneffekte
++
++- Die Korrektur basiert auf dem P11-Archiv mit dem oben genannten SHA-256.
++- Der Projektbaum lag als extrahiertes Archiv vor und besitzt in dieser Arbeitsumgebung keine `.git`-Metadaten. Der Vorher-/Nachher-Unterschied wird deshalb als separater Patch gegen das exakt gehashte P11-Archiv geliefert.
++- Kein GitHub-Remote, kein Codespace, kein Keycloak-Upstream wurde geändert.
++- Kein Commit, Push, Pull Request oder Deployment wurde ausgeführt.
++- Die Testläufe erzeugen lokale Caches und `test-results/`; diese sind durch `.gitignore` abgedeckt und werden aus dem finalen Archiv entfernt, die dauerhaften Nachweise liegen unter `audit/evidence/`.
++
++**Status:** P1A implementiert und lokal regressionsgeprüft. Nicht die vollständige R8-028-Auditliste und keine Release-Freigabe.
++
++
++## 7. Geprüfte Upstream-Versionen und verbleibende Pinning-Grenzen
++
++Die gepinnten Feature-Optionen wurden gegen die offiziellen Feature-Metadaten geprüft: Java Feature `1.8.3` unterstützt `version`, `additionalVersions`, `jdkDistro`, `installMaven` und `mavenVersion`; Git-LFS-Feature `1.2.5` unterstützt `version` und `autoPull`. Die festgelegten Maven- und Git-LFS-Versionen existieren als veröffentlichte Releases.
++
++- Java Feature-Metadaten: https://github.com/devcontainers/features/blob/main/src/java/devcontainer-feature.json
++- Git LFS Feature-Metadaten: https://github.com/devcontainers/features/blob/main/src/git-lfs/devcontainer-feature.json
++- Maven 3.10.0 Release: https://maven.apache.org/docs/history
++- Git LFS 3.8.1 Release: https://github.com/git-lfs/git-lfs/releases/tag/v3.8.1
++
++Offen bleiben der Digest-Pin des Python-Basisimages und ein reproduzierbarer Debian-APT-Snapshot für `git-subtree`. Die Features sind exakt versioniert, das Gesamtimage aber noch nicht vollständig unveränderlich.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-027-DEVCONTAINER-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-027-DEVCONTAINER-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-027-DEVCONTAINER-TESTS.txt	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-027-DEVCONTAINER-TESTS.txt	2026-11-07 11:11:48.275097660 +0000
+@@ -1,3 +1,5 @@
++HISTORICAL R8-027 STATIC CONFIG TEST LOG — predates R8-028-P1A runtime-verifier tests. Current counts and toolchain evidence are in the R8-028-P1A report.
++
+ $ python -m unittest tests.test_devcontainer_config -v
+ Result: 9 passed
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt	2026-11-07 11:08:06.998170752 +0000
+@@ -0,0 +1,147 @@
++DOCUMENTATION PUBLISHER — CODESPACES ACCEPTANCE
++UTC: 20261107T110757Z
++Project: /mnt/data/work-p11/documentation-publisher-v2
++Platform: Linux-6.18.57-x86_64-with-glibc2.41
++Python: 3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]
++GIT_EXEC_PATH: <unset>
++Python version contract: PASS (3.13)
++
++=== Test dependencies ===
++$ /opt/pyvenv/bin/python -c import yaml, pytest, importlib.metadata as m; print('PyYAML', m.version('PyYAML')); print('jsonschema', m.version('jsonschema')); print('pytest', pytest.__version__)
++PyYAML 6.0.3
++jsonschema 4.26.0
++pytest 9.0.2
++RESULT: PASS (exit 0)
++
++=== Git version ===
++$ git --version
++git version 2.47.3
++RESULT: PASS (exit 0)
++
++=== Git exec path ===
++$ git --exec-path
++/usr/lib/git-core
++RESULT: PASS (exit 0)
++
++=== Git subtree discovery in this exact environment ===
++$ git subtree -h
++usage: git subtree add   --prefix=<prefix> <commit>
++   or: git subtree add   --prefix=<prefix> <repository> <ref>
++   or: git subtree merge --prefix=<prefix> <commit>
++   or: git subtree split --prefix=<prefix> [<commit>]
++   or: git subtree pull  --prefix=<prefix> <repository> <ref>
++   or: git subtree push  --prefix=<prefix> <repository> <refspec>
++
++    -h, --help            show the help
++    -q, --quiet           quiet
++    -d, --debug           show debug messages
++    -P, --[no-]prefix ... the name of the subdir to split out
++
++options for 'split' (also: 'push')
++    --[no-]annotate ...   add a prefix to commit message of new commits
++    -b, --branch ...      create a new branch from the split subtree
++    --[no-]ignore-joins   ignore prior --rejoin commits
++    --[no-]onto ...       try connecting new tree to an existing one
++    --[no-]rejoin         merge the new branch back into HEAD
++
++options for 'add' and 'merge' (also: 'pull', 'split --rejoin', and 'push --rejoin')
++    --[no-]squash         merge subtree changes as a single commit
++    -m, --message ...     use the given message as the commit message for the merge commit
++RESULT: PASS (exit 129)
++
++=== Git LFS version ===
++$ git lfs version
++git: 'lfs' is not a git command. See 'git --help'.
++
++The most similar command is
++	refs
++RESULT: FAIL (exit 1)
++
++=== Active Java runtime (must be 25) ===
++$ java -version
++openjdk version "21.0.12.1" 2026-08-18
++OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
++OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
++RESULT: PASS (exit 0)
++RESULT DETAIL: FAIL (Java 25 must be active; Java 21 is additional only)
++
++=== Additional JDK 21 ===
++No SDKMAN Java 21 candidate directory found
++RESULT: FAIL
++
++=== Maven version ===
++$ mvn --version
++RESULT: FAIL (FileNotFoundError: [Errno 2] No such file or directory: 'mvn')
++
++=== Python compilation ===
++$ /opt/pyvenv/bin/python -m compileall -q publisher_engine tests scripts
++RESULT: PASS (exit 0)
++
++=== CLI version ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli --version
++2.0.10-dev
++RESULT: PASS (exit 0)
++
++=== Generic config template must fail closed ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.example.yml
++ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
++RESULT: PASS (exit 1)
++
++=== Keycloak smoke config validation ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml
++Configuration valid: 1 source(s), 1 component(s), 1 task(s)
++RESULT: PASS (exit 0)
++
++=== Keycloak smoke component plan ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli plan --config publisher.keycloak.smoke.yml --components keycloak-docs
++{
++  "project": {
++    "id": "documentation-project",
++    "title": "Documentation Project",
++    "description": "Published documentation",
++    "locale": "en",
++    "timezone": "UTC",
++    "license": "",
++    "copyright": "",
++    "logo": "",
++    "favicon": "",
++    "homepage_url": "",
++    "repository_url": "",
++    "maintainers": []
++  },
++  "selection": [
++    "keycloak-docs"
++  ],
++  "components": [
++    {
++      "id": "keycloak-docs",
++      "route": "keycloak",
++      "tasks": [
++        "build-keycloak-docs"
++      ],
++      "dependencies": []
++    }
++  ],
++  "sources": [
++    {
++      "id": "keycloak",
++      "mode": "git_subtree",
++      "prefix": ".publisher-sources/keycloak",
++      "ref": "main"
++    }
++  ],
++  "tasks": [
++    {
++      "id": "build-keycloak-docs",
++      "source_id": "keycloak",
++      "depends_on": []
++    }
++  ]
++}
++RESULT: PASS (exit 0)
++
++=== Summary ===
++Failed/blocked checks: 4
++Git exec path observed: /usr/lib/git-core
++Git subtree discovery: PASS
++Interpretation: this report tests the extracted candidate against the current container; it does not deploy, push, modify the remote, or alter the existing checkout.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-ENVIRONMENT-TEST-DOUBLE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-ENVIRONMENT-TEST-DOUBLE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-ENVIRONMENT-TEST-DOUBLE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-ENVIRONMENT-TEST-DOUBLE.txt	2026-11-07 11:16:10.570432951 +0000
+@@ -0,0 +1,142 @@
++DOCUMENTATION PUBLISHER — CODESPACES ACCEPTANCE
++UTC: 20261107T110649Z
++Project: /mnt/data/work-p11/documentation-publisher-v2
++Platform: Linux-6.18.57-x86_64-with-glibc2.41
++Python: 3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]
++GIT_EXEC_PATH: <unset>
++Python version contract: PASS (3.13)
++
++=== Test dependencies ===
++$ /opt/pyvenv/bin/python3 -c import yaml, pytest, importlib.metadata as m; print('PyYAML', m.version('PyYAML')); print('jsonschema', m.version('jsonschema')); print('pytest', pytest.__version__)
++PyYAML 6.0.3
++jsonschema 4.26.0
++pytest 9.0.2
++RESULT: PASS (exit 0)
++
++=== Git version ===
++$ git --version
++git version 2.47.3
++RESULT: PASS (exit 0)
++
++=== Git exec path ===
++$ git --exec-path
++/usr/lib/git-core
++RESULT: PASS (exit 0)
++
++=== Git subtree discovery in this exact environment ===
++$ git subtree -h
++usage: git subtree add   --prefix=<prefix> <commit>
++   or: git subtree add   --prefix=<prefix> <repository> <ref>
++   or: git subtree merge --prefix=<prefix> <commit>
++   or: git subtree split --prefix=<prefix> [<commit>]
++   or: git subtree pull  --prefix=<prefix> <repository> <ref>
++   or: git subtree push  --prefix=<prefix> <repository> <refspec>
++
++    -h, --help            show the help
++    -q, --quiet           quiet
++    -d, --debug           show debug messages
++    -P, --[no-]prefix ... the name of the subdir to split out
++
++options for 'split' (also: 'push')
++    --[no-]annotate ...   add a prefix to commit message of new commits
++    -b, --branch ...      create a new branch from the split subtree
++    --[no-]ignore-joins   ignore prior --rejoin commits
++    --[no-]onto ...       try connecting new tree to an existing one
++    --[no-]rejoin         merge the new branch back into HEAD
++
++options for 'add' and 'merge' (also: 'pull', 'split --rejoin', and 'push --rejoin')
++    --[no-]squash         merge subtree changes as a single commit
++    -m, --message ...     use the given message as the commit message for the merge commit
++RESULT: PASS (exit 129)
++
++=== Git LFS version ===
++$ git lfs version
++git-lfs/3.8.1 (TEST DOUBLE — host runner lacks Git LFS)
++RESULT: PASS (exit 0)
++
++=== Active Java runtime (must be 25) ===
++$ java -version
++openjdk version "25.0.1" 2026-10-01
++RESULT: PASS (exit 0)
++
++=== Additional JDK 21 ===
++21.0.8-tem: Java 21 verified
++RESULT: PASS
++
++=== Maven version ===
++$ mvn --version
++Apache Maven 3.10.0 (TEST DOUBLE — host runner lacks Maven)
++RESULT: PASS (exit 0)
++
++=== Python compilation ===
++$ /opt/pyvenv/bin/python3 -m compileall -q publisher_engine tests scripts
++RESULT: PASS (exit 0)
++
++=== CLI version ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli --version
++2.0.10-dev
++RESULT: PASS (exit 0)
++
++=== Generic config template must fail closed ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli validate-config --config publisher.example.yml
++ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
++RESULT: PASS (exit 1)
++
++=== Keycloak smoke config validation ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml
++Configuration valid: 1 source(s), 1 component(s), 1 task(s)
++RESULT: PASS (exit 0)
++
++=== Keycloak smoke component plan ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli plan --config publisher.keycloak.smoke.yml --components keycloak-docs
++{
++  "project": {
++    "id": "documentation-project",
++    "title": "Documentation Project",
++    "description": "Published documentation",
++    "locale": "en",
++    "timezone": "UTC",
++    "license": "",
++    "copyright": "",
++    "logo": "",
++    "favicon": "",
++    "homepage_url": "",
++    "repository_url": "",
++    "maintainers": []
++  },
++  "selection": [
++    "keycloak-docs"
++  ],
++  "components": [
++    {
++      "id": "keycloak-docs",
++      "route": "keycloak",
++      "tasks": [
++        "build-keycloak-docs"
++      ],
++      "dependencies": []
++    }
++  ],
++  "sources": [
++    {
++      "id": "keycloak",
++      "mode": "git_subtree",
++      "prefix": ".publisher-sources/keycloak",
++      "ref": "main"
++    }
++  ],
++  "tasks": [
++    {
++      "id": "build-keycloak-docs",
++      "source_id": "keycloak",
++      "depends_on": []
++    }
++  ]
++}
++RESULT: PASS (exit 0)
++
++=== Summary ===
++Failed/blocked checks: 0
++Git exec path observed: /usr/lib/git-core
++Git subtree discovery: PASS
++Interpretation: this report tests the extracted candidate against the current container; it does not deploy, push, modify the remote, or alter the existing checkout.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-MAIN-TEST-DOUBLE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-MAIN-TEST-DOUBLE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-MAIN-TEST-DOUBLE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-MAIN-TEST-DOUBLE.txt	2026-11-07 11:16:10.571366117 +0000
+@@ -0,0 +1,4 @@
++............................................................................................................. [ 49%]
++.........................................................................................................s [ 98%]
++....                                                                     [100%]
++218 passed, 1 skipped, 73 subtests passed in 27.77s
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-PROCESS-TEST-DOUBLE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-PROCESS-TEST-DOUBLE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-PROCESS-TEST-DOUBLE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-PROCESS-TEST-DOUBLE.txt	2026-11-07 11:16:10.572402766 +0000
+@@ -0,0 +1,2 @@
++......                                                                   [100%]
++6 passed in 9.04s
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-TEST-DOUBLE-OUTPUT.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-TEST-DOUBLE-OUTPUT.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-TEST-DOUBLE-OUTPUT.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CODESPACES-STARTER-TEST-DOUBLE-OUTPUT.txt	2026-11-07 11:11:10.016250921 +0000
+@@ -0,0 +1,158 @@
++DOCUMENTATION PUBLISHER — CODESPACES ACCEPTANCE
++UTC: 20261107T110649Z
++Project: /mnt/data/work-p11/documentation-publisher-v2
++Platform: Linux-6.18.57-x86_64-with-glibc2.41
++Python: 3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]
++GIT_EXEC_PATH: <unset>
++Python version contract: PASS (3.13)
++
++=== Test dependencies ===
++$ /opt/pyvenv/bin/python3 -c import yaml, pytest, importlib.metadata as m; print('PyYAML', m.version('PyYAML')); print('jsonschema', m.version('jsonschema')); print('pytest', pytest.__version__)
++PyYAML 6.0.3
++jsonschema 4.26.0
++pytest 9.0.2
++RESULT: PASS (exit 0)
++
++=== Git version ===
++$ git --version
++git version 2.47.3
++RESULT: PASS (exit 0)
++
++=== Git exec path ===
++$ git --exec-path
++/usr/lib/git-core
++RESULT: PASS (exit 0)
++
++=== Git subtree discovery in this exact environment ===
++$ git subtree -h
++usage: git subtree add   --prefix=<prefix> <commit>
++   or: git subtree add   --prefix=<prefix> <repository> <ref>
++   or: git subtree merge --prefix=<prefix> <commit>
++   or: git subtree split --prefix=<prefix> [<commit>]
++   or: git subtree pull  --prefix=<prefix> <repository> <ref>
++   or: git subtree push  --prefix=<prefix> <repository> <refspec>
++
++    -h, --help            show the help
++    -q, --quiet           quiet
++    -d, --debug           show debug messages
++    -P, --[no-]prefix ... the name of the subdir to split out
++
++options for 'split' (also: 'push')
++    --[no-]annotate ...   add a prefix to commit message of new commits
++    -b, --branch ...      create a new branch from the split subtree
++    --[no-]ignore-joins   ignore prior --rejoin commits
++    --[no-]onto ...       try connecting new tree to an existing one
++    --[no-]rejoin         merge the new branch back into HEAD
++
++options for 'add' and 'merge' (also: 'pull', 'split --rejoin', and 'push --rejoin')
++    --[no-]squash         merge subtree changes as a single commit
++    -m, --message ...     use the given message as the commit message for the merge commit
++RESULT: PASS (exit 129)
++
++=== Git LFS version ===
++$ git lfs version
++git-lfs/3.8.1 (TEST DOUBLE — host runner lacks Git LFS)
++RESULT: PASS (exit 0)
++
++=== Active Java runtime (must be 25) ===
++$ java -version
++openjdk version "25.0.1" 2026-10-01
++RESULT: PASS (exit 0)
++
++=== Additional JDK 21 ===
++21.0.8-tem: Java 21 verified
++RESULT: PASS
++
++=== Maven version ===
++$ mvn --version
++Apache Maven 3.10.0 (TEST DOUBLE — host runner lacks Maven)
++RESULT: PASS (exit 0)
++
++=== Python compilation ===
++$ /opt/pyvenv/bin/python3 -m compileall -q publisher_engine tests scripts
++RESULT: PASS (exit 0)
++
++=== CLI version ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli --version
++2.0.10-dev
++RESULT: PASS (exit 0)
++
++=== Generic config template must fail closed ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli validate-config --config publisher.example.yml
++ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
++RESULT: PASS (exit 1)
++
++=== Keycloak smoke config validation ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml
++Configuration valid: 1 source(s), 1 component(s), 1 task(s)
++RESULT: PASS (exit 0)
++
++=== Keycloak smoke component plan ===
++$ /opt/pyvenv/bin/python3 -m publisher_engine.cli plan --config publisher.keycloak.smoke.yml --components keycloak-docs
++{
++  "project": {
++    "id": "documentation-project",
++    "title": "Documentation Project",
++    "description": "Published documentation",
++    "locale": "en",
++    "timezone": "UTC",
++    "license": "",
++    "copyright": "",
++    "logo": "",
++    "favicon": "",
++    "homepage_url": "",
++    "repository_url": "",
++    "maintainers": []
++  },
++  "selection": [
++    "keycloak-docs"
++  ],
++  "components": [
++    {
++      "id": "keycloak-docs",
++      "route": "keycloak",
++      "tasks": [
++        "build-keycloak-docs"
++      ],
++      "dependencies": []
++    }
++  ],
++  "sources": [
++    {
++      "id": "keycloak",
++      "mode": "git_subtree",
++      "prefix": ".publisher-sources/keycloak",
++      "ref": "main"
++    }
++  ],
++  "tasks": [
++    {
++      "id": "build-keycloak-docs",
++      "source_id": "keycloak",
++      "depends_on": []
++    }
++  ]
++}
++RESULT: PASS (exit 0)
++
++=== Summary ===
++Failed/blocked checks: 0
++Git exec path observed: /usr/lib/git-core
++Git subtree discovery: PASS
++Interpretation: this report tests the extracted candidate against the current container; it does not deploy, push, modify the remote, or alter the existing checkout.
++
++Report written to: /mnt/data/work-p11/documentation-publisher-v2/test-results/codespaces-acceptance-20261107T110649Z.log
++
++=== Main regression suite (process tests excluded) ===
++............................................................................................................. [ 49%]
++.........................................................................................................s [ 98%]
++....                                                                     [100%]
++218 passed, 1 skipped, 73 subtests passed in 27.77s
++
++=== Subprocess/process-group regression suite ===
++......                                                                   [100%]
++6 passed in 9.04s
++
++Test logs written to:
++  test-results/pytest-main-20261107T110659Z.log
++  test-results/pytest-process-20261107T110659Z.log
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CONFIG-SECURITY-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CONFIG-SECURITY-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-CONFIG-SECURITY-TESTS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-CONFIG-SECURITY-TESTS.txt	2026-11-07 11:11:21.647648742 +0000
+@@ -0,0 +1,36 @@
++test_active_redirect_schemes_are_never_allowlisted (tests.test_engine.ConfigValidationTests.test_active_redirect_schemes_are_never_allowlisted) ... ok
++test_authoring_mapping_paths_reject_drive_nested_alternate_stream_and_nul_paths (tests.test_engine.ConfigValidationTests.test_authoring_mapping_paths_reject_drive_nested_alternate_stream_and_nul_paths) ... ok
++test_common_pat_and_jwt_environment_names_require_secret_classification (tests.test_engine.ConfigValidationTests.test_common_pat_and_jwt_environment_names_require_secret_classification) ... ok
++test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope (tests.test_engine.ConfigValidationTests.test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope) ... ok
++test_configuration_preserves_yaml_merge_key_semantics (tests.test_engine.ConfigValidationTests.test_configuration_preserves_yaml_merge_key_semantics) ... ok
++test_configuration_rejects_duplicate_yaml_mapping_keys (tests.test_engine.ConfigValidationTests.test_configuration_rejects_duplicate_yaml_mapping_keys) ... ok
++test_environment_expansion_is_limited_to_explicit_nonsecret_fields (tests.test_engine.ConfigValidationTests.test_environment_expansion_is_limited_to_explicit_nonsecret_fields) ... ok
++test_generated_site_paths_cannot_overlap_static_assets_or_not_found_page (tests.test_engine.ConfigValidationTests.test_generated_site_paths_cannot_overlap_static_assets_or_not_found_page) ... ok
++test_generic_configuration_template_has_explicit_host_placeholders (tests.test_engine.ConfigValidationTests.test_generic_configuration_template_has_explicit_host_placeholders) ... ok
++test_keycloak_configuration_is_named_and_marked_as_smoke_only (tests.test_engine.ConfigValidationTests.test_keycloak_configuration_is_named_and_marked_as_smoke_only) ... ok
++test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real (tests.test_engine.ConfigValidationTests.test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real) ... ok
++test_live_publishing_rejects_reserved_example_and_test_origins (tests.test_engine.ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins) ... ok
++test_missing_public_environment_reference_is_reported_or_preserved_by_mode (tests.test_engine.ConfigValidationTests.test_missing_public_environment_reference_is_reported_or_preserved_by_mode) ... ok
++test_non_command_publisher_rejects_command_only_configuration (tests.test_engine.ConfigValidationTests.test_non_command_publisher_rejects_command_only_configuration) ... ok
++test_profiles_container_and_inactive_profiles_are_type_checked (tests.test_engine.ConfigValidationTests.test_profiles_container_and_inactive_profiles_are_type_checked) ... ok
++test_profiles_merge_mapping_and_replace_lists (tests.test_engine.ConfigValidationTests.test_profiles_merge_mapping_and_replace_lists) ... ok
++test_publishing_command_env_policy_rejects_ambiguous_or_unsafe_settings (tests.test_engine.ConfigValidationTests.test_publishing_command_env_policy_rejects_ambiguous_or_unsafe_settings) ... ok
++test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts (tests.test_engine.ConfigValidationTests.test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts) ... ok
++test_repository_paths_cannot_target_git_metadata (tests.test_engine.ConfigValidationTests.test_repository_paths_cannot_target_git_metadata) ... ok
++test_required_files_and_subtree_paths_reject_traversal_or_drive_prefix (tests.test_engine.ConfigValidationTests.test_required_files_and_subtree_paths_reject_traversal_or_drive_prefix) ... ok
++test_reserved_example_origins_remain_valid_for_explicit_dry_run (tests.test_engine.ConfigValidationTests.test_reserved_example_origins_remain_valid_for_explicit_dry_run) ... ok
++test_safe_child_rejects_drive_nested_alternate_stream_and_nul_paths (tests.test_engine.ConfigValidationTests.test_safe_child_rejects_drive_nested_alternate_stream_and_nul_paths) ... ok
++test_safe_child_rejects_symlink_resolving_into_git_metadata (tests.test_engine.ConfigValidationTests.test_safe_child_rejects_symlink_resolving_into_git_metadata) ... ok
++test_schema_rejects_unknown_keys (tests.test_engine.ConfigValidationTests.test_schema_rejects_unknown_keys) ... ok
++test_schema_validation_precedes_nested_environment_expansion (tests.test_engine.ConfigValidationTests.test_schema_validation_precedes_nested_environment_expansion) ... ok
++test_security_reporting_override_requires_private_target (tests.test_engine.ConfigValidationTests.test_security_reporting_override_requires_private_target) ... ok
++test_site_symlink_requirement_cannot_be_disabled (tests.test_engine.ConfigValidationTests.test_site_symlink_requirement_cannot_be_disabled) ... ok
++test_task_cycle_is_rejected (tests.test_engine.ConfigValidationTests.test_task_cycle_is_rejected) ... ok
++test_unresolved_placeholder_is_rejected (tests.test_engine.ConfigValidationTests.test_unresolved_placeholder_is_rejected) ... ok
++test_workflow_environment_rejects_runner_overrides_and_secret_expressions (tests.test_engine.ConfigValidationTests.test_workflow_environment_rejects_runner_overrides_and_secret_expressions) ... ok
++test_workflow_paths_must_remain_inside_publisher_checkout (tests.test_engine.ConfigValidationTests.test_workflow_paths_must_remain_inside_publisher_checkout) ... ok
++
++----------------------------------------------------------------------
++Ran 31 tests in 0.222s
++
++OK
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-CONFIG-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-CONFIG-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-CONFIG-TESTS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-CONFIG-TESTS.txt	2026-11-07 11:11:22.430315961 +0000
+@@ -0,0 +1,17 @@
++test_active_codespaces_configuration_exists_at_discovery_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_active_codespaces_configuration_exists_at_discovery_path) ... ok
++test_active_configuration_is_not_left_as_example_only (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_active_configuration_is_not_left_as_example_only) ... ok
++test_codespaces_acceptance_checks_exact_pinned_versions_and_example_semantics (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_codespaces_acceptance_checks_exact_pinned_versions_and_example_semantics) ... ok
++test_codespaces_test_script_runs_regression_groups_separately (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_codespaces_test_script_runs_regression_groups_separately) ... ok
++test_dockerfile_installs_git_subtree_into_the_active_exec_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_dockerfile_installs_git_subtree_into_the_active_exec_path) ... ok
++test_dockerfile_uses_the_expected_base_and_cleans_apt_metadata (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_dockerfile_uses_the_expected_base_and_cleans_apt_metadata) ... ok
++test_environment_features_cover_publisher_and_keycloak_build (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_environment_features_cover_publisher_and_keycloak_build) ... ok
++test_environment_verifier_requires_exact_declared_python_java_maven_and_lfs_versions (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_environment_verifier_requires_exact_declared_python_java_maven_and_lfs_versions) ... ok
++test_git_subtree_install_guard_preserves_same_path_and_links_alternate_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_git_subtree_install_guard_preserves_same_path_and_links_alternate_path) ... ok
++test_lifecycle_commands_and_setup_scripts_exist (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_lifecycle_commands_and_setup_scripts_exist) ... ok
++test_repository_upload_does_not_depend_on_a_local_feature_installer (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_repository_upload_does_not_depend_on_a_local_feature_installer) ... ok
++test_root_gitignore_covers_generated_runtime_and_test_files (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_root_gitignore_covers_generated_runtime_and_test_files) ... ok
++
++----------------------------------------------------------------------
++Ran 12 tests in 0.005s
++
++OK
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-RUNTIME-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-RUNTIME-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-RUNTIME-TESTS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-DEVCONTAINER-RUNTIME-TESTS.txt	2026-11-07 11:11:23.191693674 +0000
+@@ -0,0 +1,10 @@
++test_declared_runtime_contract_passes_when_all_tools_match (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_declared_runtime_contract_passes_when_all_tools_match) ... ok
++test_verifier_rejects_java_21_as_the_active_default (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_java_21_as_the_active_default) ... ok
++test_verifier_rejects_missing_additional_jdk_21 (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_missing_additional_jdk_21) ... ok
++test_verifier_rejects_non_313_python (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_non_313_python) ... ok
++test_verifier_rejects_wrong_git_lfs_and_maven_versions (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_wrong_git_lfs_and_maven_versions) ... ok
++
++----------------------------------------------------------------------
++Ran 5 tests in 0.089s
++
++OK
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-GENERIC-TEMPLATE-NEGATIVE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-GENERIC-TEMPLATE-NEGATIVE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-GENERIC-TEMPLATE-NEGATIVE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-GENERIC-TEMPLATE-NEGATIVE.txt	2026-11-07 11:11:07.911249068 +0000
+@@ -0,0 +1,3 @@
++ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
++
++EXIT=1
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-JSON-VALIDATION.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-JSON-VALIDATION.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-JSON-VALIDATION.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-JSON-VALIDATION.txt	2026-11-07 11:15:16.846493128 +0000
+@@ -0,0 +1 @@
++devcontainer.json and publisher.schema.json strict JSON: PASS
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-PLAN.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-PLAN.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-PLAN.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-PLAN.txt	2026-11-07 11:11:07.911249068 +0000
+@@ -0,0 +1,46 @@
++{
++  "project": {
++    "id": "documentation-project",
++    "title": "Documentation Project",
++    "description": "Published documentation",
++    "locale": "en",
++    "timezone": "UTC",
++    "license": "",
++    "copyright": "",
++    "logo": "",
++    "favicon": "",
++    "homepage_url": "",
++    "repository_url": "",
++    "maintainers": []
++  },
++  "selection": [
++    "keycloak-docs"
++  ],
++  "components": [
++    {
++      "id": "keycloak-docs",
++      "route": "keycloak",
++      "tasks": [
++        "build-keycloak-docs"
++      ],
++      "dependencies": []
++    }
++  ],
++  "sources": [
++    {
++      "id": "keycloak",
++      "mode": "git_subtree",
++      "prefix": ".publisher-sources/keycloak",
++      "ref": "main"
++    }
++  ],
++  "tasks": [
++    {
++      "id": "build-keycloak-docs",
++      "source_id": "keycloak",
++      "depends_on": []
++    }
++  ]
++}
++
++EXIT=0
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-POSITIVE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-POSITIVE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-POSITIVE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-KEYCLOAK-SMOKE-POSITIVE.txt	2026-11-07 11:11:07.911249068 +0000
+@@ -0,0 +1,3 @@
++Configuration valid: 1 source(s), 1 component(s), 1 task(s)
++
++EXIT=0
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-LOCAL-HOST-ACCEPTANCE-BLOCKERS.txt	2026-11-07 11:11:10.017317544 +0000
+@@ -0,0 +1,147 @@
++DOCUMENTATION PUBLISHER — CODESPACES ACCEPTANCE
++UTC: 20261107T110757Z
++Project: /mnt/data/work-p11/documentation-publisher-v2
++Platform: Linux-6.18.57-x86_64-with-glibc2.41
++Python: 3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]
++GIT_EXEC_PATH: <unset>
++Python version contract: PASS (3.13)
++
++=== Test dependencies ===
++$ /opt/pyvenv/bin/python -c import yaml, pytest, importlib.metadata as m; print('PyYAML', m.version('PyYAML')); print('jsonschema', m.version('jsonschema')); print('pytest', pytest.__version__)
++PyYAML 6.0.3
++jsonschema 4.26.0
++pytest 9.0.2
++RESULT: PASS (exit 0)
++
++=== Git version ===
++$ git --version
++git version 2.47.3
++RESULT: PASS (exit 0)
++
++=== Git exec path ===
++$ git --exec-path
++/usr/lib/git-core
++RESULT: PASS (exit 0)
++
++=== Git subtree discovery in this exact environment ===
++$ git subtree -h
++usage: git subtree add   --prefix=<prefix> <commit>
++   or: git subtree add   --prefix=<prefix> <repository> <ref>
++   or: git subtree merge --prefix=<prefix> <commit>
++   or: git subtree split --prefix=<prefix> [<commit>]
++   or: git subtree pull  --prefix=<prefix> <repository> <ref>
++   or: git subtree push  --prefix=<prefix> <repository> <refspec>
++
++    -h, --help            show the help
++    -q, --quiet           quiet
++    -d, --debug           show debug messages
++    -P, --[no-]prefix ... the name of the subdir to split out
++
++options for 'split' (also: 'push')
++    --[no-]annotate ...   add a prefix to commit message of new commits
++    -b, --branch ...      create a new branch from the split subtree
++    --[no-]ignore-joins   ignore prior --rejoin commits
++    --[no-]onto ...       try connecting new tree to an existing one
++    --[no-]rejoin         merge the new branch back into HEAD
++
++options for 'add' and 'merge' (also: 'pull', 'split --rejoin', and 'push --rejoin')
++    --[no-]squash         merge subtree changes as a single commit
++    -m, --message ...     use the given message as the commit message for the merge commit
++RESULT: PASS (exit 129)
++
++=== Git LFS version ===
++$ git lfs version
++git: 'lfs' is not a git command. See 'git --help'.
++
++The most similar command is
++	refs
++RESULT: FAIL (exit 1)
++
++=== Active Java runtime (must be 25) ===
++$ java -version
++openjdk version "21.0.12.1" 2026-08-18
++OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
++OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
++RESULT: PASS (exit 0)
++RESULT DETAIL: FAIL (Java 25 must be active; Java 21 is additional only)
++
++=== Additional JDK 21 ===
++No SDKMAN Java 21 candidate directory found
++RESULT: FAIL
++
++=== Maven version ===
++$ mvn --version
++RESULT: FAIL (FileNotFoundError: [Errno 2] No such file or directory: 'mvn')
++
++=== Python compilation ===
++$ /opt/pyvenv/bin/python -m compileall -q publisher_engine tests scripts
++RESULT: PASS (exit 0)
++
++=== CLI version ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli --version
++2.0.10-dev
++RESULT: PASS (exit 0)
++
++=== Generic config template must fail closed ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.example.yml
++ERROR: Unresolved configuration placeholders at: /publisher/clone_url, /publisher/ref, /publisher/allowed_hosts/0, /sources/0/vcs/clone_url, /sources/0/vcs/default_ref, /sources/0/vcs/allowed_hosts/0, /authoring_targets/0/web_url, /authoring_targets/0/repository, /authoring_targets/0/ref, /authoring_targets/0/mapping/source_prefix, /authoring_targets/0/mapping/target_prefix, /build_tasks/0/argv/0, /build_tasks/0/argv/1, /build_tasks/0/argv/2, /build_tasks/0/outputs/0, /components/0/output_path, /components/0/fallback/url, /site/base_url, /site/base_path, /triggers/push_branches/0, /triggers/deploy_branch, /workflow/actions/checkout, /workflow/actions/setup_python, /workflow/actions/upload_pages_artifact, /workflow/actions/deploy_pages
++RESULT: PASS (exit 1)
++
++=== Keycloak smoke config validation ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli validate-config --config publisher.keycloak.smoke.yml
++Configuration valid: 1 source(s), 1 component(s), 1 task(s)
++RESULT: PASS (exit 0)
++
++=== Keycloak smoke component plan ===
++$ /opt/pyvenv/bin/python -m publisher_engine.cli plan --config publisher.keycloak.smoke.yml --components keycloak-docs
++{
++  "project": {
++    "id": "documentation-project",
++    "title": "Documentation Project",
++    "description": "Published documentation",
++    "locale": "en",
++    "timezone": "UTC",
++    "license": "",
++    "copyright": "",
++    "logo": "",
++    "favicon": "",
++    "homepage_url": "",
++    "repository_url": "",
++    "maintainers": []
++  },
++  "selection": [
++    "keycloak-docs"
++  ],
++  "components": [
++    {
++      "id": "keycloak-docs",
++      "route": "keycloak",
++      "tasks": [
++        "build-keycloak-docs"
++      ],
++      "dependencies": []
++    }
++  ],
++  "sources": [
++    {
++      "id": "keycloak",
++      "mode": "git_subtree",
++      "prefix": ".publisher-sources/keycloak",
++      "ref": "main"
++    }
++  ],
++  "tasks": [
++    {
++      "id": "build-keycloak-docs",
++      "source_id": "keycloak",
++      "depends_on": []
++    }
++  ]
++}
++RESULT: PASS (exit 0)
++
++=== Summary ===
++Failed/blocked checks: 4
++Git exec path observed: /usr/lib/git-core
++Git subtree discovery: PASS
++Interpretation: this report tests the extracted candidate against the current container; it does not deploy, push, modify the remote, or alter the existing checkout.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-MAIN-REGRESSION.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-MAIN-REGRESSION.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-MAIN-REGRESSION.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-MAIN-REGRESSION.txt	2026-11-07 11:14:53.805823431 +0000
+@@ -0,0 +1,4 @@
++............................................................................................................. [ 49%]
++.........................................................................................................s [ 98%]
++....                                                                     [100%]
++218 passed, 1 skipped, 73 subtests passed in 24.10s
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-PROCESS-REGRESSION.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-PROCESS-REGRESSION.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-PROCESS-REGRESSION.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-PROCESS-REGRESSION.txt	2026-11-07 11:15:07.854231878 +0000
+@@ -0,0 +1,17 @@
++============================= test session starts ==============================
++platform linux -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0 -- /opt/pyvenv/bin/python
++cachedir: .pytest_cache
++metadata: {'Python': '3.13.5', 'Platform': 'Linux-6.18.57-x86_64-with-glibc2.41', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.13.0', 'ddtrace': '4.4.0', 'Faker': '40.1.2', 'asyncio': '1.3.0', 'cov': '7.0.0', 'json-report': '1.5.0', 'metadata': '3.1.1'}, 'PLATFORM': 'linux/amd64', 'CI': 'true'}
++rootdir: /mnt/data/work-p11/documentation-publisher-v2
++plugins: anyio-4.13.0, ddtrace-4.4.0, Faker-40.1.2, asyncio-1.3.0, cov-7.0.0, json-report-1.5.0, metadata-3.1.1
++asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
++collecting ... collected 6 items
++
++tests/test_process.py::BoundedProcessTests::test_large_stdout_and_stderr_are_drained_but_only_tails_retained PASSED [ 16%]
++tests/test_process.py::BoundedProcessTests::test_stderr_can_be_merged_into_bounded_stdout PASSED [ 33%]
++tests/test_process.py::BoundedProcessTests::test_timeout_closes_captured_pipe_handles PASSED [ 50%]
++tests/test_process.py::BoundedProcessTests::test_timeout_contains_only_bounded_tail PASSED [ 66%]
++tests/test_process.py::BoundedProcessTests::test_timeout_kills_descendant_process_group PASSED [ 83%]
++tests/test_process.py::BoundedProcessTests::test_zero_retention_still_drains_pipes_and_completes PASSED [100%]
++
++============================== 6 passed in 8.95s ===============================
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-PYCOMPILE.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-PYCOMPILE.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-PYCOMPILE.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-PYCOMPILE.txt	2026-11-07 11:15:15.626857822 +0000
+@@ -0,0 +1 @@
++Python compilation: PASS
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-SHELL-SYNTAX.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-SHELL-SYNTAX.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-SHELL-SYNTAX.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-SHELL-SYNTAX.txt	2026-11-07 11:15:15.626857822 +0000
+@@ -0,0 +1 @@
++Bash syntax validation: PASS
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-TARGETED-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-TARGETED-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-TARGETED-TESTS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-TARGETED-TESTS.txt	2026-11-07 11:15:14.478424360 +0000
+@@ -0,0 +1,53 @@
++test_active_redirect_schemes_are_never_allowlisted (tests.test_engine.ConfigValidationTests.test_active_redirect_schemes_are_never_allowlisted) ... ok
++test_authoring_mapping_paths_reject_drive_nested_alternate_stream_and_nul_paths (tests.test_engine.ConfigValidationTests.test_authoring_mapping_paths_reject_drive_nested_alternate_stream_and_nul_paths) ... ok
++test_common_pat_and_jwt_environment_names_require_secret_classification (tests.test_engine.ConfigValidationTests.test_common_pat_and_jwt_environment_names_require_secret_classification) ... ok
++test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope (tests.test_engine.ConfigValidationTests.test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope) ... ok
++test_configuration_preserves_yaml_merge_key_semantics (tests.test_engine.ConfigValidationTests.test_configuration_preserves_yaml_merge_key_semantics) ... ok
++test_configuration_rejects_duplicate_yaml_mapping_keys (tests.test_engine.ConfigValidationTests.test_configuration_rejects_duplicate_yaml_mapping_keys) ... ok
++test_environment_expansion_is_limited_to_explicit_nonsecret_fields (tests.test_engine.ConfigValidationTests.test_environment_expansion_is_limited_to_explicit_nonsecret_fields) ... ok
++test_generated_site_paths_cannot_overlap_static_assets_or_not_found_page (tests.test_engine.ConfigValidationTests.test_generated_site_paths_cannot_overlap_static_assets_or_not_found_page) ... ok
++test_generic_configuration_template_has_explicit_host_placeholders (tests.test_engine.ConfigValidationTests.test_generic_configuration_template_has_explicit_host_placeholders) ... ok
++test_keycloak_configuration_is_named_and_marked_as_smoke_only (tests.test_engine.ConfigValidationTests.test_keycloak_configuration_is_named_and_marked_as_smoke_only) ... ok
++test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real (tests.test_engine.ConfigValidationTests.test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real) ... ok
++test_live_publishing_rejects_reserved_example_and_test_origins (tests.test_engine.ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins) ... ok
++test_missing_public_environment_reference_is_reported_or_preserved_by_mode (tests.test_engine.ConfigValidationTests.test_missing_public_environment_reference_is_reported_or_preserved_by_mode) ... ok
++test_non_command_publisher_rejects_command_only_configuration (tests.test_engine.ConfigValidationTests.test_non_command_publisher_rejects_command_only_configuration) ... ok
++test_profiles_container_and_inactive_profiles_are_type_checked (tests.test_engine.ConfigValidationTests.test_profiles_container_and_inactive_profiles_are_type_checked) ... ok
++test_profiles_merge_mapping_and_replace_lists (tests.test_engine.ConfigValidationTests.test_profiles_merge_mapping_and_replace_lists) ... ok
++test_publishing_command_env_policy_rejects_ambiguous_or_unsafe_settings (tests.test_engine.ConfigValidationTests.test_publishing_command_env_policy_rejects_ambiguous_or_unsafe_settings) ... ok
++test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts (tests.test_engine.ConfigValidationTests.test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts) ... ok
++test_repository_paths_cannot_target_git_metadata (tests.test_engine.ConfigValidationTests.test_repository_paths_cannot_target_git_metadata) ... ok
++test_required_files_and_subtree_paths_reject_traversal_or_drive_prefix (tests.test_engine.ConfigValidationTests.test_required_files_and_subtree_paths_reject_traversal_or_drive_prefix) ... ok
++test_reserved_example_origins_remain_valid_for_explicit_dry_run (tests.test_engine.ConfigValidationTests.test_reserved_example_origins_remain_valid_for_explicit_dry_run) ... ok
++test_safe_child_rejects_drive_nested_alternate_stream_and_nul_paths (tests.test_engine.ConfigValidationTests.test_safe_child_rejects_drive_nested_alternate_stream_and_nul_paths) ... ok
++test_safe_child_rejects_symlink_resolving_into_git_metadata (tests.test_engine.ConfigValidationTests.test_safe_child_rejects_symlink_resolving_into_git_metadata) ... ok
++test_schema_rejects_unknown_keys (tests.test_engine.ConfigValidationTests.test_schema_rejects_unknown_keys) ... ok
++test_schema_validation_precedes_nested_environment_expansion (tests.test_engine.ConfigValidationTests.test_schema_validation_precedes_nested_environment_expansion) ... ok
++test_security_reporting_override_requires_private_target (tests.test_engine.ConfigValidationTests.test_security_reporting_override_requires_private_target) ... ok
++test_site_symlink_requirement_cannot_be_disabled (tests.test_engine.ConfigValidationTests.test_site_symlink_requirement_cannot_be_disabled) ... ok
++test_task_cycle_is_rejected (tests.test_engine.ConfigValidationTests.test_task_cycle_is_rejected) ... ok
++test_unresolved_placeholder_is_rejected (tests.test_engine.ConfigValidationTests.test_unresolved_placeholder_is_rejected) ... ok
++test_workflow_environment_rejects_runner_overrides_and_secret_expressions (tests.test_engine.ConfigValidationTests.test_workflow_environment_rejects_runner_overrides_and_secret_expressions) ... ok
++test_workflow_paths_must_remain_inside_publisher_checkout (tests.test_engine.ConfigValidationTests.test_workflow_paths_must_remain_inside_publisher_checkout) ... ok
++test_active_codespaces_configuration_exists_at_discovery_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_active_codespaces_configuration_exists_at_discovery_path) ... ok
++test_active_configuration_is_not_left_as_example_only (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_active_configuration_is_not_left_as_example_only) ... ok
++test_codespaces_acceptance_checks_exact_pinned_versions_and_example_semantics (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_codespaces_acceptance_checks_exact_pinned_versions_and_example_semantics) ... ok
++test_codespaces_test_script_runs_regression_groups_separately (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_codespaces_test_script_runs_regression_groups_separately) ... ok
++test_dockerfile_installs_git_subtree_into_the_active_exec_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_dockerfile_installs_git_subtree_into_the_active_exec_path) ... ok
++test_dockerfile_uses_the_expected_base_and_cleans_apt_metadata (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_dockerfile_uses_the_expected_base_and_cleans_apt_metadata) ... ok
++test_environment_features_cover_publisher_and_keycloak_build (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_environment_features_cover_publisher_and_keycloak_build) ... ok
++test_environment_verifier_requires_exact_declared_python_java_maven_and_lfs_versions (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_environment_verifier_requires_exact_declared_python_java_maven_and_lfs_versions) ... ok
++test_git_subtree_install_guard_preserves_same_path_and_links_alternate_path (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_git_subtree_install_guard_preserves_same_path_and_links_alternate_path) ... ok
++test_lifecycle_commands_and_setup_scripts_exist (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_lifecycle_commands_and_setup_scripts_exist) ... ok
++test_repository_upload_does_not_depend_on_a_local_feature_installer (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_repository_upload_does_not_depend_on_a_local_feature_installer) ... ok
++test_root_gitignore_covers_generated_runtime_and_test_files (tests.test_devcontainer_config.ActiveDevContainerConfigTests.test_root_gitignore_covers_generated_runtime_and_test_files) ... ok
++test_declared_runtime_contract_passes_when_all_tools_match (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_declared_runtime_contract_passes_when_all_tools_match) ... ok
++test_verifier_rejects_java_21_as_the_active_default (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_java_21_as_the_active_default) ... ok
++test_verifier_rejects_missing_additional_jdk_21 (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_missing_additional_jdk_21) ... ok
++test_verifier_rejects_non_313_python (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_non_313_python) ... ok
++test_verifier_rejects_wrong_git_lfs_and_maven_versions (tests.test_devcontainer_runtime.DevContainerRuntimeVerifierTests.test_verifier_rejects_wrong_git_lfs_and_maven_versions) ... ok
++
++----------------------------------------------------------------------
++Ran 48 tests in 0.347s
++
++OK
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS-SUMMARY.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS-SUMMARY.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS-SUMMARY.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS-SUMMARY.txt	2026-11-07 11:16:10.573341071 +0000
+@@ -0,0 +1,20 @@
++Differential regression against the unmodified P11 source archive
++
++Baseline: documentation-publisher-v2-r8-2.0.10-dev-P11-ACTIVE-DEVCONTAINER.zip
++SHA-256: a35bcfe52c130a8505422806f58fc429f7bbad8b0fbcae1d89722d35ba212936
++
++The four new regression methods were copied into a fresh extraction of the unmodified
++baseline; no production code was changed in that extraction.
++
++Command: pytest -q for the four selected tests:
++- repository allowlist rejects wildcard hosts
++- communication allowlist rejects wildcard hosts globally and per component
++- live publishing rejects reserved/example/test/non-global IP origins
++- live publishing rejects a reserved canonical origin
++
++Observed baseline result: 11 expected assertion failures/subfailures and 1 passing control
++(Dry-Run reserved-origin behavior). The baseline accepted wildcard allowlists and reserved
++origins in live mode, proving these tests detect the pre-correction behavior.
++
++Full raw traceback/output: R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt
++Current P12/P1A targeted result: 48/48 pass, and the main regression suite remains green.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt
+--- p11-baseline/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/audit/evidence/R8-028-P1A-UNMODIFIED-P11-BASELINE-NEGATIVE-TESTS.txt	2026-11-07 11:13:44.371803947 +0000
+@@ -0,0 +1,220 @@
++FF.F                                                             [100%]
++=================================== FAILURES ===================================
++_ ConfigValidationTests.test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts _
++
++self = <test_engine.ConfigValidationTests testMethod=test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts>
++
++    def test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["publisher"]["clone_url"] = "https://git.publisher.invalid/org/publisher.git"
++            cfg["publisher"]["allowed_hosts"] = ["*"]
++>           with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E           AssertionError: ConfigError not raised
++
++tests/test_engine.py:346: AssertionError
++_ ConfigValidationTests.test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope _
++
++self = <test_engine.ConfigValidationTests testMethod=test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope>
++
++    def test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["communication"]["issues"]["allowed_hosts"] = ["*"]
++>           with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E           AssertionError: ConfigError not raised
++
++tests/test_engine.py:368: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://example.invalid') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://docs.example') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://preview.test') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://example.com') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://docs.example.com') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://preview.example.org') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://127.0.0.1') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_example_and_test_origins (origin='https://192.0.2.10') _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_example_and_test_origins>
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++>               with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E               AssertionError: ConfigError not raised
++
++tests/test_engine.py:389: AssertionError
++_ ConfigValidationTests.test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real _
++
++self = <test_engine.ConfigValidationTests testMethod=test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real>
++
++    def test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["site"]["base_url"] = "https://docs.example.org"
++            cfg["site"]["canonical_base_url"] = "https://example.invalid"
++            cfg["publishing"]["dry_run"] = False
++>           with self.assertRaisesRegex(ConfigError, "site.canonical_base_url"):
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E           AssertionError: ConfigError not raised
++
++tests/test_engine.py:399: AssertionError
++=========================== short test summary info ============================
++FAILED tests/test_engine.py::ConfigValidationTests::test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts - AssertionError: ConfigError not raised
++FAILED tests/test_engine.py::ConfigValidationTests::test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://example.invalid') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://docs.example') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://preview.test') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://example.com') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://docs.example.com') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://preview.example.org') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://127.0.0.1') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++SUBFAILED(origin='https://192.0.2.10') tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_example_and_test_origins - AssertionError: ConfigError not raised
++FAILED tests/test_engine.py::ConfigValidationTests::test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real - AssertionError: ConfigError not raised
++11 failed, 1 passed in 1.41s
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/docs/DEVCONTAINER.md work-p11/documentation-publisher-v2/docs/DEVCONTAINER.md
+--- p11-baseline/documentation-publisher-v2/docs/DEVCONTAINER.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/docs/DEVCONTAINER.md	2026-11-07 11:04:27.601940377 +0000
+@@ -9,9 +9,9 @@
+ - Python 3.13 from the official Dev Container Python image.
+ - Git Subtree installed as an OS package during the Docker image build, then linked into the
+   exact directory returned by `git --exec-path`. No global `GIT_EXEC_PATH` override is set.
+-- Git LFS through the official Git LFS Dev Container Feature, with automatic pull disabled.
+-- Eclipse Temurin JDK 25 as default and JDK 21 additionally installed.
+-- Maven through the Java Feature. `MAVEN_ARGS` carries the current Keycloak CI HTTP retry and
++- Git LFS 3.8.1 through pinned Feature 1.2.5, with automatic pull disabled.
++- Eclipse Temurin JDK 25 as default and JDK 21 additionally installed through pinned Java Feature 1.8.3.
++- Maven 3.10.0 through the Java Feature. `MAVEN_ARGS` carries the current Keycloak CI HTTP retry and
+   connection settings; actual Keycloak builds should still use the repository's `./mvnw` wrapper.
+ - `.venv` created by `post-create.sh`; `requirements-dev.txt` or `requirements.txt` is installed
+   when already present.
+@@ -26,7 +26,7 @@
+ During the image build, apt installs `git-subtree` and links its helper into the active Git
+ exec path. The Java and Git LFS Features install their tools. `postCreateCommand` creates
+ `.venv`; `waitFor: postCreateCommand` ensures provisioning waits for that step to finish;
+-`postStartCommand` checks the environment every time the Codespace starts.
++`postStartCommand` checks exact Python/Java/Maven/Git-LFS versions and Git Subtree availability every time the Codespace starts.
+ 
+ A brand-new repository containing only `.devcontainer/` can still complete container setup.
+ Once the Publisher source is present, rerun `bash .devcontainer/post-create.sh` to install
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/docs/GIT-AND-SECURITY.md work-p11/documentation-publisher-v2/docs/GIT-AND-SECURITY.md
+--- p11-baseline/documentation-publisher-v2/docs/GIT-AND-SECURITY.md	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/docs/GIT-AND-SECURITY.md	2026-11-07 11:08:28.534021468 +0000
+@@ -39,3 +39,8 @@
+ ## External link validation scope
+ 
+ `validation.validate_external_links` is an external-host allowlist check, not a network reachability check. It does not perform DNS lookups, HTTP requests, status-code verification, or redirect-chain checks. Do not interpret a successful build with this option enabled as proof that every external destination is online.
++
++
++Repository `allowed_hosts` values are exact hostnames only. Wildcards such as `*` and `*.example.com` are rejected; list every permitted hostname explicitly. Omitting `allowed_hosts` retains the documented unrestricted-host behavior, so deployments that require host restriction must set a reviewed non-empty allowlist. The generic `publisher.example.yml` template uses unresolved host placeholders and therefore fails validation until explicit hostnames are supplied.
++
++A live configuration (`publishing.dry_run: false`) must use a real public origin. Reserved example/test origins (`example.invalid`, `.example`, `.test`, `.localhost`, and `example.com/.net/.org`, including their subdomains) are allowed for dry-run fixtures only and are rejected for live publishing. Non-global IP origins (loopback, private, link-local, documentation-only and multicast ranges) are rejected for live publishing as well. Exact host allowlist entries must be syntactically valid hostnames; wildcard, empty labels and labels beginning/ending with a hyphen are rejected.
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/publisher.example.yml work-p11/documentation-publisher-v2/publisher.example.yml
+--- p11-baseline/documentation-publisher-v2/publisher.example.yml	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/publisher.example.yml	2026-11-07 10:57:08.684217666 +0000
+@@ -22,7 +22,7 @@
+   clone_url: <PUBLISHER_GIT_CLONE_URL>
+   ref: <PUBLISHER_BUILD_REF>
+   clone_timeout_seconds: 1800
+-  allowed_hosts: ["*"]
++  allowed_hosts: [<PUBLISHER_ALLOWED_HOST>]
+   auth:
+     mode: none
+ 
+@@ -39,7 +39,7 @@
+       clone_timeout_seconds: 1800
+       submodules: false
+       lfs: false
+-      allowed_hosts: ["*"]
++      allowed_hosts: [<SOURCE_ALLOWED_HOST>]
+       auth:
+         mode: none
+     root: .
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/publisher.keycloak.example.yml work-p11/documentation-publisher-v2/publisher.keycloak.example.yml
+--- p11-baseline/documentation-publisher-v2/publisher.keycloak.example.yml	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/publisher.keycloak.example.yml	1970-01-01 00:00:00.000000000 +0000
+@@ -1,230 +0,0 @@
+-# Keycloak documentation smoke configuration for Documentation Publisher 2.0.10-dev
+-# Copy to publisher.yml and replace all <...> values.
+-# No repository owner, account, project, branch, or provider is assumed by this template.
+-# Run: python -m publisher_engine.cli validate-config --config publisher.yml
+-schema_version: 2
+-project:
+-  id: documentation-project
+-  title: Documentation Project
+-  description: Published documentation
+-  locale: en
+-  timezone: UTC
+-  license: ""
+-  copyright: ""
+-  logo: ""
+-  favicon: ""
+-  homepage_url: ""
+-  repository_url: ""
+-  maintainers: []
+-
+-# Identity 1: repository that contains the engine/configuration/workflow.
+-publisher:
+-  clone_url: https://github.com/elcabron68/keycloak-pages.git
+-  ref: main
+-  clone_timeout_seconds: 1800
+-  allowed_hosts:
+-    - github.com
+-  auth:
+-    mode: none
+-
+-# Identity 2..N: repositories whose source files are temporarily integrated.
+-# A source must be a Git repository for the real git-subtree integration mode.
+-sources:
+-  - id: keycloak
+-    vcs:
+-      provider: git
+-      clone_url: https://github.com/keycloak/keycloak.git
+-      default_ref: main
+-      ref_type: branch
+-      depth: 1
+-      clone_timeout_seconds: 1800
+-      submodules: false
+-      lfs: false
+-      allowed_hosts:
+-        - github.com
+-      auth:
+-        mode: none
+-    root: .
+-    integration:
+-      mode: git_subtree
+-      prefix: .publisher-sources/keycloak
+-      squash: true
+-      history: shallow
+-
+-# Separate the source checkout from the browser-facing GitHub editor target.
+-authoring_targets:
+-  - id: keycloak-github
+-    provider: github
+-    web_url: https://github.com/keycloak/keycloak
+-    repository: keycloak/keycloak
+-    ref: main
+-    ref_type: branch
+-    source_id: keycloak
+-    edit_url_template: "{web_url}/edit/{ref}/{path}"
+-    mapping:
+-      source_prefix: docs/documentation
+-      target_prefix: docs/documentation
+-    unresolved_policy: fail
+-
+-# Build tasks are plain executable + argv, never an implicit shell script.
+-# Any build tool (Maven, Gradle, Sphinx, Antora, MkDocs, Docusaurus, etc.) can be called.
+-build_tasks:
+-  - id: build-keycloak-docs
+-    source_id: keycloak
+-    adapter: command
+-    working_directory: .
+-    working_directory_scope: source
+-    argv:
+-      - ./mvnw
+-      - install
+-      - -Dtest=!ExternalLinksTest
+-      - -am
+-      - -pl
+-      - docs/documentation/tests,docs/documentation/dist
+-      - -e
+-      - -Pdocumentation
+-    environment: {}
+-    pass_environment:
+-      - PATH
+-      - HOME
+-      - LANG
+-      - JAVA_HOME
+-      - MAVEN_ARGS
+-    secret_environment: []
+-    depends_on: []
+-    timeout_seconds: 3600
+-    retry: 0
+-    retry_safe: false
+-    retry_delay_seconds: 1
+-    outputs:
+-      - docs/documentation/target
+-
+-# Each component describes one independently selectable documentation section.
+-components:
+-  - id: keycloak-docs
+-    title: Keycloak Documentation
+-    description: Official Keycloak documentation
+-    source_id: keycloak
+-    route: keycloak
+-    link_adapter: keycloak_asciidoc
+-    tasks:
+-      - build-keycloak-docs
+-    output_path: docs/documentation/target
+-    output_kind: directory
+-    index_file: index.html
+-    required_output_files:
+-      - index.html
+-    fallback:
+-      mode: error
+-    dependencies: []
+-    version: current
+-    locale: en
+-    # Optional source map emitted by the configured build task. It is validated and removed
+-    # from the public site. See docs/LINKS-AND-COMMUNICATION.md.
+-    # provenance_file: publisher-provenance.json
+-    link_overrides:
+-      edit:
+-        mode: inherit
+-      communication: {}
+-
+-# Identity N+2: public site address. It is not inferred from publisher or source repository.
+-site:
+-  base_url: https://example.invalid
+-  base_path: /keycloak-pages
+-  output_directory: _site-smoke
+-  components_root: docs
+-  version: current
+-  default_version: current
+-  default_locale: en
+-  component_path_template: "{components_root}/{version}/{route}"
+-  version_index_path_template: "{components_root}/{version}/index.html"
+-  default_component: keycloak-docs
+-  root_index_target: ""
+-  not_found_path: 404.html
+-  generate_index: true
+-  robots: noindex
+-  canonical_base_url: ""
+-  locales: [en]
+-  versions: [current]
+-  navigation: []
+-  static_assets: []
+-  trailing_slash: true
+-
+-# Edit-target behaviour: inherit, override, disable.
+-# Override requires an explicit authoring_targets[].id.
+-links:
+-  edit:
+-    mode: override
+-    target_id: keycloak-github
+-    unresolved_policy: fail
+-    require_markers: true
+-
+-# Each channel independently supports inherit, override, disable.
+-# inherit leaves the source project's original href/contact unchanged.
+-communication:
+-  email:
+-    mode: inherit
+-  issues:
+-    mode: inherit
+-  bug_reports:
+-    mode: inherit
+-  feature_requests:
+-    mode: inherit
+-  discussions:
+-    mode: inherit
+-  support:
+-    mode: inherit
+-  security:
+-    mode: inherit
+-  community:
+-    mode: inherit
+-  feedback:
+-    mode: inherit
+-
+-validation:
+-  require_no_symlinks: true
+-  validate_local_links: true
+-  validate_fragments: true
+-  validate_css_assets: true
+-  validate_edit_links: true
+-  validate_communication_links: true
+-  validate_external_links: false
+-  allowed_external_hosts: []
+-  validate_redirect_schemes:
+-    - https
+-    - http
+-  unresolved_edit_policy: fail
+-  require_build_manifest: true
+-  max_site_bytes: 1000000000
+-  max_files: 200000
+-  max_archive_ratio: 1000
+-  max_html_depth: 0
+-  required_files: []
+-
+-workspace:
+-  temp_root: .publisher-tmp
+-  git_user_name: Documentation Publisher (temporary)
+-  git_user_email: documentation-publisher@example.invalid
+-  cleanup_on_success: true
+-  cleanup_on_failure: true
+-  fail_on_cleanup_error: true
+-  cleanup_retries: 2
+-  cleanup_delay_seconds: 0.2
+-  keep_failed_workspace: false
+-  keep_on_success: false
+-  lock_timeout_seconds: 60
+-
+-# Identity N+3: where validated static output is delivered.
+-publishing_targets:
+-  - id: ci-artifact
+-    adapter: artifact
+-    output_path: _site-smoke
+-publishing:
+-  target_id: ci-artifact
+-  artifact_name: documentation-site
+-  retention_days: 1
+-  dry_run: true
+-  atomic: true
+-  pre_publish_validation: true
+-  timeout_seconds: 600
+-
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/publisher.keycloak.smoke.yml work-p11/documentation-publisher-v2/publisher.keycloak.smoke.yml
+--- p11-baseline/documentation-publisher-v2/publisher.keycloak.smoke.yml	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/publisher.keycloak.smoke.yml	2026-11-07 10:57:08.684348083 +0000
+@@ -0,0 +1,230 @@
++# PROJECT-SPECIFIC SMOKE FIXTURE — NOT A GENERIC OR LIVE DEPLOYMENT CONFIGURATION.
++# Uses the configured publisher repository, upstream Keycloak main branch and reserved https://example.invalid origin.
++# Keep publishing.dry_run: true. Live publishing with reserved example/test origins is rejected by semantic validation.
++# For a real deployment, create publisher.yml from publisher.example.yml and set reviewed repository URLs, exact allowed_hosts and a real public origin.
++schema_version: 2
++project:
++  id: documentation-project
++  title: Documentation Project
++  description: Published documentation
++  locale: en
++  timezone: UTC
++  license: ""
++  copyright: ""
++  logo: ""
++  favicon: ""
++  homepage_url: ""
++  repository_url: ""
++  maintainers: []
++
++# Identity 1: repository that contains the engine/configuration/workflow.
++publisher:
++  clone_url: https://github.com/elcabron68/keycloak-pages.git
++  ref: main
++  clone_timeout_seconds: 1800
++  allowed_hosts:
++    - github.com
++  auth:
++    mode: none
++
++# Identity 2..N: repositories whose source files are temporarily integrated.
++# A source must be a Git repository for the real git-subtree integration mode.
++sources:
++  - id: keycloak
++    vcs:
++      provider: git
++      clone_url: https://github.com/keycloak/keycloak.git
++      default_ref: main
++      ref_type: branch
++      depth: 1
++      clone_timeout_seconds: 1800
++      submodules: false
++      lfs: false
++      allowed_hosts:
++        - github.com
++      auth:
++        mode: none
++    root: .
++    integration:
++      mode: git_subtree
++      prefix: .publisher-sources/keycloak
++      squash: true
++      history: shallow
++
++# Separate the source checkout from the browser-facing GitHub editor target.
++authoring_targets:
++  - id: keycloak-github
++    provider: github
++    web_url: https://github.com/keycloak/keycloak
++    repository: keycloak/keycloak
++    ref: main
++    ref_type: branch
++    source_id: keycloak
++    edit_url_template: "{web_url}/edit/{ref}/{path}"
++    mapping:
++      source_prefix: docs/documentation
++      target_prefix: docs/documentation
++    unresolved_policy: fail
++
++# Build tasks are plain executable + argv, never an implicit shell script.
++# Any build tool (Maven, Gradle, Sphinx, Antora, MkDocs, Docusaurus, etc.) can be called.
++build_tasks:
++  - id: build-keycloak-docs
++    source_id: keycloak
++    adapter: command
++    working_directory: .
++    working_directory_scope: source
++    argv:
++      - ./mvnw
++      - install
++      - -Dtest=!ExternalLinksTest
++      - -am
++      - -pl
++      - docs/documentation/tests,docs/documentation/dist
++      - -e
++      - -Pdocumentation
++    environment: {}
++    pass_environment:
++      - PATH
++      - HOME
++      - LANG
++      - JAVA_HOME
++      - MAVEN_ARGS
++    secret_environment: []
++    depends_on: []
++    timeout_seconds: 3600
++    retry: 0
++    retry_safe: false
++    retry_delay_seconds: 1
++    outputs:
++      - docs/documentation/target
++
++# Each component describes one independently selectable documentation section.
++components:
++  - id: keycloak-docs
++    title: Keycloak Documentation
++    description: Official Keycloak documentation
++    source_id: keycloak
++    route: keycloak
++    link_adapter: keycloak_asciidoc
++    tasks:
++      - build-keycloak-docs
++    output_path: docs/documentation/target
++    output_kind: directory
++    index_file: index.html
++    required_output_files:
++      - index.html
++    fallback:
++      mode: error
++    dependencies: []
++    version: current
++    locale: en
++    # Optional source map emitted by the configured build task. It is validated and removed
++    # from the public site. See docs/LINKS-AND-COMMUNICATION.md.
++    # provenance_file: publisher-provenance.json
++    link_overrides:
++      edit:
++        mode: inherit
++      communication: {}
++
++# Identity N+2: public site address. It is not inferred from publisher or source repository.
++site:
++  base_url: https://example.invalid
++  base_path: /keycloak-pages
++  output_directory: _site-smoke
++  components_root: docs
++  version: current
++  default_version: current
++  default_locale: en
++  component_path_template: "{components_root}/{version}/{route}"
++  version_index_path_template: "{components_root}/{version}/index.html"
++  default_component: keycloak-docs
++  root_index_target: ""
++  not_found_path: 404.html
++  generate_index: true
++  robots: noindex
++  canonical_base_url: ""
++  locales: [en]
++  versions: [current]
++  navigation: []
++  static_assets: []
++  trailing_slash: true
++
++# Edit-target behaviour: inherit, override, disable.
++# Override requires an explicit authoring_targets[].id.
++links:
++  edit:
++    mode: override
++    target_id: keycloak-github
++    unresolved_policy: fail
++    require_markers: true
++
++# Each channel independently supports inherit, override, disable.
++# inherit leaves the source project's original href/contact unchanged.
++communication:
++  email:
++    mode: inherit
++  issues:
++    mode: inherit
++  bug_reports:
++    mode: inherit
++  feature_requests:
++    mode: inherit
++  discussions:
++    mode: inherit
++  support:
++    mode: inherit
++  security:
++    mode: inherit
++  community:
++    mode: inherit
++  feedback:
++    mode: inherit
++
++validation:
++  require_no_symlinks: true
++  validate_local_links: true
++  validate_fragments: true
++  validate_css_assets: true
++  validate_edit_links: true
++  validate_communication_links: true
++  validate_external_links: false
++  allowed_external_hosts: []
++  validate_redirect_schemes:
++    - https
++    - http
++  unresolved_edit_policy: fail
++  require_build_manifest: true
++  max_site_bytes: 1000000000
++  max_files: 200000
++  max_archive_ratio: 1000
++  max_html_depth: 0
++  required_files: []
++
++workspace:
++  temp_root: .publisher-tmp
++  git_user_name: Documentation Publisher (temporary)
++  git_user_email: documentation-publisher@example.invalid
++  cleanup_on_success: true
++  cleanup_on_failure: true
++  fail_on_cleanup_error: true
++  cleanup_retries: 2
++  cleanup_delay_seconds: 0.2
++  keep_failed_workspace: false
++  keep_on_success: false
++  lock_timeout_seconds: 60
++
++# Identity N+3: where validated static output is delivered.
++publishing_targets:
++  - id: ci-artifact
++    adapter: artifact
++    output_path: _site-smoke
++publishing:
++  target_id: ci-artifact
++  artifact_name: documentation-site
++  retention_days: 1
++  dry_run: true
++  atomic: true
++  pre_publish_validation: true
++  timeout_seconds: 600
++
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/publisher_engine/config.py work-p11/documentation-publisher-v2/publisher_engine/config.py
+--- p11-baseline/documentation-publisher-v2/publisher_engine/config.py	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/publisher_engine/config.py	2026-11-07 11:08:28.533537897 +0000
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ import copy
++import ipaddress
+ import json
+ import os
+ import re
+@@ -237,6 +238,49 @@
+     return parsed.hostname.lower() if parsed.hostname else None
+ 
+ 
++def _validate_allowed_hosts(allowed_hosts: list[str] | None, where: str) -> None:
++    """Validate exact host allowlists; wildcard entries are deliberately unsupported."""
++    if allowed_hosts is None:
++        return
++    if not isinstance(allowed_hosts, list):
++        raise ConfigError(f"{where} must be a list of exact hostnames")
++    for host in allowed_hosts:
++        if not isinstance(host, str) or not host or host.strip() != host:
++            raise ConfigError(f"{where} must contain non-empty exact hostnames")
++        if host == "*" or "*" in host:
++            raise ConfigError(f"{where} does not support wildcard hosts; list each permitted hostname explicitly")
++        if any(ch in host for ch in "/\\:@?#") or re.search(r"\s", host):
++            raise ConfigError(f"{where} entry {host!r} must be a hostname only, without scheme, path, port or credentials")
++        normalized = host[1:-1] if host.startswith("[") and host.endswith("]") else host
++        labels = normalized.split(".")
++        label_pattern = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z")
++        if (not normalized or len(normalized) > 253
++                or any(not label_pattern.fullmatch(label) for label in labels)):
++            raise ConfigError(f"{where} entry {host!r} is not a valid hostname")
++
++
++def _is_reserved_live_origin(value: str) -> bool:
++    """Return true for reserved example/test-only origins, not public origins."""
++    host = (urlparse(value).hostname or "").rstrip(".").lower()
++    if not host:
++        return False
++    # Documentation domains are reserved with all their subdomains, not just
++    # the four exact apex names. The special-use suffixes are likewise closed.
++    reserved_roots = ("example.com", "example.net", "example.org", "localhost")
++    if any(host == root or host.endswith("." + root) for root in reserved_roots):
++        return True
++    if any(host == suffix or host.endswith("." + suffix)
++           for suffix in ("example", "invalid", "test", "localhost")):
++        return True
++    try:
++        address = ipaddress.ip_address(host)
++    except ValueError:
++        return False
++    # A live public-site origin must not point at loopback, private, link-local,
++    # documentation-only, multicast or otherwise non-global IP address space.
++    return not address.is_global
++
++
+ def _validate_repository_url(value: str, where: str, allowed_hosts: list[str] | None = None) -> None:
+     if not value:
+         raise ConfigError(f"{where} is required")
+@@ -258,9 +302,10 @@
+         raise ConfigError(f"{where} must include a hostname")
+     host = _repository_host(value)
+     if allowed_hosts:
++        _validate_allowed_hosts(allowed_hosts, f"{where}.allowed_hosts")
+         if host is None:
+             raise ConfigError(f"{where} has no hostname to validate against allowed_hosts")
+-        if "*" not in allowed_hosts and host not in {x.lower() for x in allowed_hosts}:
++        if host not in {x.lower().strip("[]") for x in allowed_hosts}:
+             raise ConfigError(f"{where} host {host!r} is not in its configured allowed_hosts list")
+ 
+ 
+@@ -337,6 +382,7 @@
+         _unique(config.get(key, []), key)
+ 
+     publisher_url = config["publisher"].get("clone_url", "")
++    _validate_allowed_hosts(config["publisher"].get("allowed_hosts"), "publisher.allowed_hosts")
+     if not publisher_url or _PLACEHOLDER.search(publisher_url):
+         raise ConfigError("publisher.clone_url is missing or still a placeholder")
+     _validate_repository_url(publisher_url, "publisher.clone_url", config["publisher"].get("allowed_hosts"))
+@@ -358,6 +404,18 @@
+     _validate_https_url(site.get("base_url", ""), "site.base_url", allow_path=False)
+     if site.get("canonical_base_url"):
+         _validate_https_url(site["canonical_base_url"], "site.canonical_base_url", allow_path=False)
++    if config.get("publishing", {}).get("dry_run", True) is False:
++        reserved_origins = [
++            name for name, value in (("site.base_url", site.get("base_url", "")),
++                                     ("site.canonical_base_url", site.get("canonical_base_url", "")))
++            if value and _is_reserved_live_origin(value)
++        ]
++        if reserved_origins:
++            raise ConfigError(
++                "Live publishing is blocked for reserved example/test or non-global IP origins: "
++                + ", ".join(reserved_origins)
++                + ". Configure a real public HTTPS origin or keep publishing.dry_run: true."
++            )
+     _safe_relative(site.get("output_directory", ""), "site.output_directory")
+     _safe_relative(site.get("components_root", ""), "site.components_root")
+     not_found_path = site.get("not_found_path")
+@@ -405,6 +463,7 @@
+                 raise ConfigError(f"Source subtree prefixes overlap: {source['id']} ({prefix_text}) and {existing_id} ({existing})")
+         subtree_prefixes.append((prefix_text, source["id"]))
+         vcs = source["vcs"]
++        _validate_allowed_hosts(vcs.get("allowed_hosts"), f"sources.{source['id']}.vcs.allowed_hosts")
+         if vcs.get("provider") != "git":
+             raise ConfigError(f"Source {source['id']}: git_subtree requires vcs.provider=git; non-Git sources need a separate materialization adapter")
+         clone_url = vcs.get("clone_url", "")
+@@ -484,9 +543,8 @@
+             raise ConfigError(f"Component {component['id']}: edit override references an unknown authoring target")
+         for channel, settings in overrides.get("communication", {}).items():
+             _validate_channel_override(channel, settings, f"components.{component['id']}.link_overrides.communication.{channel}")
+-            hosts = settings.get("allowed_hosts", [])
+-            if "*" in hosts and len(hosts) > 1:
+-                raise ConfigError(f"components.{component['id']}.link_overrides.communication.{channel}.allowed_hosts must not mix '*' with explicit hosts")
++            _validate_allowed_hosts(settings.get("allowed_hosts", []),
++                                    f"components.{component['id']}.link_overrides.communication.{channel}.allowed_hosts")
+ 
+     for target in config.get("authoring_targets", []):
+         if target.get("source_id") and target["source_id"] not in source_ids:
+@@ -517,9 +575,7 @@
+         raise ConfigError("links.edit.override requires an existing authoring target_id")
+     for channel, settings in config.get("communication", {}).items():
+         _validate_channel_override(channel, settings, f"communication.{channel}")
+-        hosts = settings.get("allowed_hosts", [])
+-        if "*" in hosts and len(hosts) > 1:
+-            raise ConfigError(f"communication.{channel}.allowed_hosts must not mix '*' with explicit hosts")
++        _validate_allowed_hosts(settings.get("allowed_hosts", []), f"communication.{channel}.allowed_hosts")
+ 
+     workflow = config.get("workflow", {})
+     if workflow.get("file"):
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/publisher_engine/links.py work-p11/documentation-publisher-v2/publisher_engine/links.py
+--- p11-baseline/documentation-publisher-v2/publisher_engine/links.py	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/publisher_engine/links.py	2026-11-07 10:58:34.539004123 +0000
+@@ -103,7 +103,9 @@
+     if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+         raise LinkResolutionError(f"communication.{channel} must produce an absolute HTTPS URL without credentials")
+     allowed_hosts = {x.lower() for x in settings.get("allowed_hosts", [])}
+-    if allowed_hosts and "*" not in allowed_hosts and (parsed.hostname or "").lower() not in allowed_hosts:
++    if "*" in allowed_hosts or any("*" in host for host in allowed_hosts):
++        raise LinkResolutionError(f"communication.{channel}.allowed_hosts does not support wildcard hosts")
++    if allowed_hosts and (parsed.hostname or "").lower() not in allowed_hosts:
+         raise LinkResolutionError(f"communication.{channel} produced a host outside allowed_hosts: {parsed.hostname}")
+     sensitive_query_keys = {key.lower() for key, _ in parse_qsl(parsed.query, keep_blank_values=True)}
+     if sensitive_query_keys & {"token", "access_token", "password", "secret", "private_key", "authorization"}:
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/scripts/codespaces_acceptance.py work-p11/documentation-publisher-v2/scripts/codespaces_acceptance.py
+--- p11-baseline/documentation-publisher-v2/scripts/codespaces_acceptance.py	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/scripts/codespaces_acceptance.py	2026-11-07 11:08:40.451080625 +0000
+@@ -66,9 +66,11 @@
+     emit(f"Python: {sys.version.replace(os.linesep, ' ')}")
+     emit(f"GIT_EXEC_PATH: {os.environ.get('GIT_EXEC_PATH', '<unset>')}")
+ 
+-    if sys.version_info < (3, 11):
+-        emit("RESULT: FAIL (Python 3.11+ is required)")
++    if sys.version_info[:2] != (3, 13):
++        emit(f"RESULT: FAIL (Codespaces image contract requires Python 3.13 exactly; found {sys.version.split()[0]})")
+         failures += 1
++    else:
++        emit("Python version contract: PASS (3.13)")
+ 
+     ok, _ = run_step("Test dependencies", [sys.executable, "-c",
+         "import yaml, pytest, importlib.metadata as m; "
+@@ -84,12 +86,45 @@
+     if subtree_ok and "usage: git subtree" not in subtree_output.lower():
+         emit("RESULT DETAIL: FAIL (command returned without the expected git subtree help)")
+         failures += 1
+-    run_step("Git LFS availability", ["git", "lfs", "version"])
+-    java_ok, java_output = run_step("Java runtime", ["java", "-version"])
+-    if java_ok and not re.search(r"\b(?:25|21)(?:\.|\s)", java_output):
+-        emit("RESULT DETAIL: FAIL (expected Java 25 or 21; neither version was identified)")
++    lfs_ok, lfs_output = run_step("Git LFS command availability", ["git", "lfs", "version"])
++    if lfs_ok and not lfs_output.startswith("git-lfs/3.8.1"):
++        emit(f"RESULT DETAIL: FAIL (expected Git LFS 3.8.1; found {lfs_output.splitlines()[0] if lfs_output else '<empty>'})")
++        failures += 1
++
++    java_ok, java_output = run_step("Java executable availability", ["java", "-version"])
++    if java_ok and not re.search(r'\bversion\s+"25(?:\.|\")', java_output):
++        emit("RESULT DETAIL: FAIL (Java 25 must be active; Java 21 is additional only)")
++        failures += 1
++
++    sdkman_dir = Path(os.environ.get("SDKMAN_DIR", "/usr/local/sdkman"))
++    jdk21_candidates = sorted((sdkman_dir / "candidates" / "java").glob("21*"))
++    jdk21_ok = False
++    jdk21_detail = "No SDKMAN Java 21 candidate directory found"
++    for candidate in jdk21_candidates:
++        java_binary = candidate / "bin" / "java"
++        if not java_binary.is_file():
++            continue
++        try:
++            result = subprocess.run([str(java_binary), "-version"], stdout=subprocess.PIPE,
++                                    stderr=subprocess.STDOUT, text=True, timeout=15, check=False)
++        except (OSError, subprocess.TimeoutExpired) as exc:
++            jdk21_detail = f"{candidate.name}: {exc}"
++            continue
++        if result.returncode == 0 and re.search(r'\bversion\s+"21(?:\.|\")', result.stdout):
++            jdk21_ok = True
++            jdk21_detail = f"{candidate.name}: Java 21 verified"
++            break
++        jdk21_detail = f"{candidate.name}: candidate does not report Java 21"
++    emit(f"\n=== Additional JDK 21 ===")
++    emit(jdk21_detail)
++    emit(f"RESULT: {'PASS' if jdk21_ok else 'FAIL'}")
++    if not jdk21_ok:
++        failures += 1
++
++    maven_ok, maven_output = run_step("Maven command availability", ["mvn", "--version"])
++    if maven_ok and not maven_output.splitlines()[0].startswith("Apache Maven 3.10.0"):
++        emit(f"RESULT DETAIL: FAIL (expected Apache Maven 3.10.0; found {maven_output.splitlines()[0] if maven_output else '<empty>'})")
+         failures += 1
+-    run_step("Maven availability", ["mvn", "--version"])
+ 
+     # Pytest is intentionally run by scripts/test-in-codespaces.sh after this
+     # environment/CLI check exits. Keeping process-tree tests out of a nested
+@@ -99,10 +134,17 @@
+     run_step("Python compilation", [sys.executable, "-m", "compileall", "-q",
+              "publisher_engine", "tests", "scripts"])
+     run_step("CLI version", [sys.executable, "-m", "publisher_engine.cli", "--version"])
+-    run_step("Keycloak example config validation", [sys.executable, "-m",
+-             "publisher_engine.cli", "validate-config", "--config", "publisher.keycloak.example.yml"])
+-    run_step("Keycloak component plan", [sys.executable, "-m", "publisher_engine.cli", "plan",
+-             "--config", "publisher.keycloak.example.yml", "--components", "keycloak-docs"])
++    generic_ok, generic_output = run_step("Generic config template must fail closed", [sys.executable, "-m",
++        "publisher_engine.cli", "validate-config", "--config", "publisher.example.yml"],
++        accepted_returncodes=(1,))
++    if generic_ok and "Unresolved configuration placeholders" not in generic_output:
++        emit("RESULT DETAIL: FAIL (generic template did not report unresolved placeholders)")
++        failures += 1
++
++    run_step("Keycloak smoke config validation", [sys.executable, "-m",
++             "publisher_engine.cli", "validate-config", "--config", "publisher.keycloak.smoke.yml"])
++    run_step("Keycloak smoke component plan", [sys.executable, "-m", "publisher_engine.cli", "plan",
++             "--config", "publisher.keycloak.smoke.yml", "--components", "keycloak-docs"])
+ 
+     emit("\n=== Summary ===")
+     emit(f"Failed/blocked checks: {failures}")
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/tests/test_devcontainer_config.py work-p11/documentation-publisher-v2/tests/test_devcontainer_config.py
+--- p11-baseline/documentation-publisher-v2/tests/test_devcontainer_config.py	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/tests/test_devcontainer_config.py	2026-11-07 11:03:46.615682073 +0000
+@@ -22,14 +22,18 @@
+     def test_environment_features_cover_publisher_and_keycloak_build(self) -> None:
+         config = json.loads((DEVCONTAINER / "devcontainer.json").read_text(encoding="utf-8"))
+         features = config["features"]
+-        self.assertIn("ghcr.io/devcontainers/features/git-lfs:1", features)
+-        self.assertIn("ghcr.io/devcontainers/features/java:1", features)
+-        self.assertEqual(features["ghcr.io/devcontainers/features/java:1"]["version"], "25")
+-        self.assertEqual(features["ghcr.io/devcontainers/features/java:1"]["additionalVersions"], "21")
+-        self.assertEqual(features["ghcr.io/devcontainers/features/java:1"]["jdkDistro"], "tem")
+-        self.assertTrue(features["ghcr.io/devcontainers/features/java:1"]["installMaven"])
++        self.assertIn("ghcr.io/devcontainers/features/git-lfs:1.2.5", features)
++        self.assertIn("ghcr.io/devcontainers/features/java:1.8.3", features)
++        java = features["ghcr.io/devcontainers/features/java:1.8.3"]
++        lfs = features["ghcr.io/devcontainers/features/git-lfs:1.2.5"]
++        self.assertEqual(java["version"], "25")
++        self.assertEqual(java["additionalVersions"], "21")
++        self.assertEqual(java["jdkDistro"], "tem")
++        self.assertTrue(java["installMaven"])
++        self.assertEqual(java["mavenVersion"], "3.10.0")
++        self.assertEqual(lfs["version"], "3.8.1")
++        self.assertFalse(lfs["autoPull"])
+         self.assertEqual(config["containerEnv"]["MAVEN_ARGS"], "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504")
+-        self.assertFalse(features["ghcr.io/devcontainers/features/git-lfs:1"]["autoPull"])
+ 
+     def test_dockerfile_installs_git_subtree_into_the_active_exec_path(self) -> None:
+         dockerfile = (DEVCONTAINER / "Dockerfile").read_text(encoding="utf-8")
+@@ -40,7 +44,6 @@
+         self.assertIn('ln -sfn "$subtree_source" "$subtree_target"', dockerfile)
+         self.assertIn('test -x "$subtree_target"', dockerfile)
+         self.assertIn("git subtree -h", dockerfile)
+-        self.assertNotIn("GIT_EXEC_PATH=", dockerfile)
+ 
+     def test_git_subtree_install_guard_preserves_same_path_and_links_alternate_path(self) -> None:
+         # Mirror the Dockerfile's same-path guard. Debian may already install the
+@@ -79,10 +82,20 @@
+         self.assertFalse((DEVCONTAINER / "features").exists())
+         config = json.loads((DEVCONTAINER / "devcontainer.json").read_text(encoding="utf-8"))
+         self.assertEqual(set(config["features"]), {
+-            "ghcr.io/devcontainers/features/java:1",
+-            "ghcr.io/devcontainers/features/git-lfs:1",
++            "ghcr.io/devcontainers/features/java:1.8.3",
++            "ghcr.io/devcontainers/features/git-lfs:1.2.5",
+         })
+ 
++    def test_environment_verifier_requires_exact_declared_python_java_maven_and_lfs_versions(self) -> None:
++        verifier = (DEVCONTAINER / "verify-environment.sh").read_text(encoding="utf-8")
++        self.assertIn('PYTHON_LINE="$(python3 --version 2>&1)"', verifier)
++        self.assertIn("Java 25 must be the active default JDK", verifier)
++        self.assertIn('candidates/java/21*', verifier)
++        self.assertIn('CANDIDATE_LINE', verifier)
++        self.assertIn('git-lfs/3.8.1*', verifier)
++        self.assertIn('Apache Maven 3.10.0', verifier)
++        self.assertNotIn("Python 3.11+ required", verifier)
++
+     def test_lifecycle_commands_and_setup_scripts_exist(self) -> None:
+         config = json.loads((DEVCONTAINER / "devcontainer.json").read_text(encoding="utf-8"))
+         self.assertEqual(config["postCreateCommand"], "bash .devcontainer/post-create.sh")
+@@ -102,6 +115,22 @@
+         self.assertIn('>"$PROCESS_LOG" 2>&1', script)
+         self.assertEqual(script.count("-m pytest"), 2)
+ 
++    def test_codespaces_acceptance_checks_exact_pinned_versions_and_example_semantics(self) -> None:
++        script = (ROOT / "scripts" / "codespaces_acceptance.py").read_text(encoding="utf-8")
++        self.assertIn("sys.version_info[:2] != (3, 13)", script)
++        self.assertIn("git-lfs/3.8.1", script)
++        self.assertIn("Apache Maven 3.10.0", script)
++        self.assertIn('version\\s+"25', script)
++        self.assertIn('version\\s+"21', script)
++        self.assertIn("publisher.example.yml", script)
++        self.assertIn("publisher.keycloak.smoke.yml", script)
++
++    def test_root_gitignore_covers_generated_runtime_and_test_files(self) -> None:
++        ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
++        for pattern in ("__pycache__/", "*.py[cod]", ".pytest_cache/", ".venv/", "test-results/", "_site/", ".publisher-tmp/", ".publisher-sources/"):
++            with self.subTest(pattern=pattern):
++                self.assertIn(pattern, ignore)
++
+     def test_active_configuration_is_not_left_as_example_only(self) -> None:
+         self.assertFalse((DEVCONTAINER / "devcontainer.json.example").exists())
+ 
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/tests/test_devcontainer_runtime.py work-p11/documentation-publisher-v2/tests/test_devcontainer_runtime.py
+--- p11-baseline/documentation-publisher-v2/tests/test_devcontainer_runtime.py	1970-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/tests/test_devcontainer_runtime.py	2026-11-07 11:00:51.536283391 +0000
+@@ -0,0 +1,127 @@
++from __future__ import annotations
++
++import os
++import subprocess
++import tempfile
++import unittest
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++VERIFY = ROOT / ".devcontainer" / "verify-environment.sh"
++
++
++class DevContainerRuntimeVerifierTests(unittest.TestCase):
++    def make_fixture(self, *, java_major: int = 25, install_jdk21: bool = True,
++                     lfs_version: str = "3.8.1", maven_version: str = "3.10.0",
++                     python_wrapper: str | None = None):
++        td = tempfile.TemporaryDirectory()
++        base = Path(td.name)
++        repo = base / "repo"
++        bin_dir = base / "bin"
++        sdkman = base / "sdkman"
++        repo.mkdir()
++        bin_dir.mkdir()
++        candidates = sdkman / "candidates" / "java"
++        candidates.mkdir(parents=True)
++
++        git = bin_dir / "git"
++        git.write_text(
++            "#!/usr/bin/env bash\n"
++            "case \"${1:-}\" in\n"
++            "  rev-parse) pwd ;;\n"
++            "  --exec-path) echo /usr/lib/git-core ;;\n"
++            "  --version) echo 'git version 2.47.3' ;;\n"
++            "  subtree) echo 'usage: git subtree add' ;;\n"
++            f"  lfs) echo 'git-lfs/{lfs_version} (test fixture)' ;;\n"
++            "  *) echo \"unexpected git arguments: $*\" >&2; exit 2 ;;\n"
++            "esac\n",
++            encoding="utf-8",
++        )
++        git.chmod(0o755)
++
++        java = bin_dir / "java"
++        java.write_text(
++            "#!/usr/bin/env bash\n"
++            f"echo 'openjdk version \"{java_major}.0.2\" 2026-10-01' >&2\n",
++            encoding="utf-8",
++        )
++        java.chmod(0o755)
++
++        maven = bin_dir / "mvn"
++        maven.write_text(f"#!/usr/bin/env bash\necho 'Apache Maven {maven_version}'\n", encoding="utf-8")
++        maven.chmod(0o755)
++
++        if install_jdk21:
++            jdk21 = candidates / "21.0.8-tem"
++            (jdk21 / "bin").mkdir(parents=True)
++            jdk21_java = jdk21 / "bin" / "java"
++            jdk21_java.write_text(
++                "#!/usr/bin/env bash\necho 'openjdk version \"21.0.8\" 2026-08-01' >&2\n",
++                encoding="utf-8",
++            )
++            jdk21_java.chmod(0o755)
++
++        env = os.environ.copy()
++        env["PATH"] = str(bin_dir) + os.pathsep + env.get("PATH", "")
++        env["SDKMAN_DIR"] = str(sdkman)
++        if python_wrapper is not None:
++            py = bin_dir / "python3"
++            py.write_text(python_wrapper, encoding="utf-8")
++            py.chmod(0o755)
++        return td, repo, env
++
++    def run_verifier(self, repo: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
++        return subprocess.run(
++            ["bash", str(VERIFY)], cwd=repo, env=env,
++            text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=15,
++        )
++
++    def test_declared_runtime_contract_passes_when_all_tools_match(self):
++        td, repo, env = self.make_fixture()
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertEqual(result.returncode, 0, result.stdout)
++        self.assertIn("Python: Python 3.13", result.stdout)
++        self.assertIn("Java 21 additional JDK: installed", result.stdout)
++        self.assertIn("Maven: Apache Maven 3.10.0", result.stdout)
++        self.assertIn("Git LFS: git-lfs/3.8.1", result.stdout)
++
++    def test_verifier_rejects_java_21_as_the_active_default(self):
++        td, repo, env = self.make_fixture(java_major=21)
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("Java 25 must be the active default JDK", result.stdout)
++
++    def test_verifier_rejects_missing_additional_jdk_21(self):
++        td, repo, env = self.make_fixture(install_jdk21=False)
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("JDK 21 must be installed as an additional", result.stdout)
++
++    def test_verifier_rejects_wrong_git_lfs_and_maven_versions(self):
++        td, repo, env = self.make_fixture(lfs_version="3.7.1", maven_version="3.9.16")
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("Expected Git LFS 3.8.1", result.stdout)
++
++        td, repo, env = self.make_fixture(lfs_version="3.8.1", maven_version="3.9.16")
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("Expected Maven 3.10.0", result.stdout)
++
++    def test_verifier_rejects_non_313_python(self):
++        real_python = subprocess.check_output(["bash", "-lc", "command -v python3"], text=True).strip()
++        wrapper = f"#!/usr/bin/env bash\nif [[ \"${{1:-}}\" == \"--version\" ]]; then echo 'Python 3.12.8'; exit 0; fi\nexec {real_python!r} \"$@\"\n"
++        td, repo, env = self.make_fixture(python_wrapper=wrapper)
++        with td:
++            result = self.run_verifier(repo, env)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("Codespaces image must provide Python 3.13 exactly", result.stdout)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff -ruN '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=test-results' p11-baseline/documentation-publisher-v2/tests/test_engine.py work-p11/documentation-publisher-v2/tests/test_engine.py
+--- p11-baseline/documentation-publisher-v2/tests/test_engine.py	1980-01-01 00:00:00.000000000 +0000
++++ work-p11/documentation-publisher-v2/tests/test_engine.py	2026-11-07 11:08:28.533900545 +0000
+@@ -337,6 +337,97 @@
+             p=Path(td)/"publisher.yml"; p.write_text(yaml.safe_dump(cfg))
+             with self.assertRaises(ConfigError): load_config(p)
+ 
++    def test_repository_host_allowlists_reject_wildcards_and_accept_exact_hosts(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["publisher"]["clone_url"] = "https://git.publisher.invalid/org/publisher.git"
++            cfg["publisher"]["allowed_hosts"] = ["*"]
++            with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
++                semantic_validate(cfg)
++
++            for invalid_host in ("*.example.com", "-bad.example.com", "bad-.example.com", "bad..example.com"):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["publisher"]["clone_url"] = "https://git.publisher.invalid/org/publisher.git"
++                cfg["publisher"]["allowed_hosts"] = [invalid_host]
++                with self.subTest(host=invalid_host), self.assertRaises(ConfigError):
++                    semantic_validate(cfg)
++
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["publisher"]["clone_url"] = "https://git.publisher.invalid/org/publisher.git"
++            cfg["publisher"]["allowed_hosts"] = ["git.publisher.invalid"]
++            cfg["sources"][0]["vcs"]["clone_url"] = "https://git.source.invalid/org/source.git"
++            cfg["sources"][0]["vcs"]["allowed_hosts"] = ["git.source.invalid"]
++            semantic_validate(cfg)
++
++    def test_communication_host_allowlists_reject_wildcards_at_global_and_component_scope(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["communication"]["issues"]["allowed_hosts"] = ["*"]
++            with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
++                semantic_validate(cfg)
++
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["components"][0]["link_overrides"] = {"communication": {
++                "issues": {"mode": "override", "url_template": "https://issues.example.invalid/new", "allowed_hosts": ["*.example.invalid"]}
++            }}
++            with self.assertRaisesRegex(ConfigError, "wildcard hosts"):
++                semantic_validate(cfg)
++
++    def test_live_publishing_rejects_reserved_example_and_test_origins(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            for origin in (
++                "https://example.invalid", "https://docs.example", "https://preview.test",
++                "https://example.com", "https://docs.example.com", "https://preview.example.org",
++                "https://127.0.0.1", "https://192.0.2.10",
++            ):
++                cfg = base_config(root, root / "publisher.git", root / "source.git")
++                cfg["site"]["base_url"] = origin
++                cfg["publishing"]["dry_run"] = False
++                with self.subTest(origin=origin), self.assertRaisesRegex(ConfigError, "reserved example/test or non-global IP origins"):
++                    semantic_validate(cfg)
++
++    def test_live_publishing_rejects_reserved_canonical_origin_even_when_base_origin_is_real(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["site"]["base_url"] = "https://docs.example.org"
++            cfg["site"]["canonical_base_url"] = "https://example.invalid"
++            cfg["publishing"]["dry_run"] = False
++            with self.assertRaisesRegex(ConfigError, "site.canonical_base_url"):
++                semantic_validate(cfg)
++
++    def test_reserved_example_origins_remain_valid_for_explicit_dry_run(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            cfg = base_config(root, root / "publisher.git", root / "source.git")
++            cfg["site"]["base_url"] = "https://example.invalid"
++            cfg["publishing"]["dry_run"] = True
++            semantic_validate(cfg)
++
++    def test_generic_configuration_template_has_explicit_host_placeholders(self):
++        template = ROOT / "publisher.example.yml"
++        text = template.read_text(encoding="utf-8")
++        self.assertIn("<PUBLISHER_ALLOWED_HOST>", text)
++        self.assertIn("<SOURCE_ALLOWED_HOST>", text)
++        self.assertNotIn('allowed_hosts: ["*"]', text)
++        cfg_path = ROOT / "publisher.example.yml"
++        with self.assertRaisesRegex(ConfigError, "Unresolved configuration placeholders"):
++            load_config(cfg_path)
++
++    def test_keycloak_configuration_is_named_and_marked_as_smoke_only(self):
++        smoke_path = ROOT / "publisher.keycloak.smoke.yml"
++        self.assertTrue(smoke_path.is_file())
++        self.assertFalse((ROOT / "publisher.keycloak.example.yml").exists())
++        text = smoke_path.read_text(encoding="utf-8")
++        self.assertIn("NOT A GENERIC OR LIVE DEPLOYMENT CONFIGURATION", text)
++        self.assertIn("publishing.dry_run: true", text)
++        loaded = load_config(smoke_path)
++        self.assertTrue(loaded["publishing"].get("dry_run", True))
++        self.assertTrue(loaded["site"]["base_url"].endswith("example.invalid"))
++
+     def test_security_reporting_override_requires_private_target(self):
+         with tempfile.TemporaryDirectory() as td:
+             cfg = base_config(Path(td), Path(td)/"publisher.git", Path(td)/"source.git")
+@@ -1208,6 +1299,10 @@
+     def _config(self, root: Path, *, output_path: str, replace: bool = False,
+                 allow_external: bool = False, atomic: bool = True) -> Path:
+         cfg = base_config(root, root / "publisher.git", root / "source.git")
++        # Publishing-adapter tests exercise local filesystem/command behavior, not
++        # a reserved documentation origin. Use a syntactically real public origin
++        # so the live-publish example-domain guard is tested separately.
++        cfg["site"]["base_url"] = "https://docs.keycloak.org"
+         cfg["publishing_targets"] = [{
+             "id": "filesystem", "adapter": "filesystem", "output_path": output_path,
+             "replace_existing": replace, "allow_external_destination": allow_external,
+@@ -1390,6 +1485,9 @@
+                         pass_environment: list[str] | None = None,
+                         secret_environment: list[str] | None = None) -> Path:
+         cfg = base_config(root, root / "publisher.git", root / "source.git")
++        # The command adapter is a local fixture; do not combine its live-mode
++        # tests with a reserved example origin that must now be rejected.
++        cfg["site"]["base_url"] = "https://docs.keycloak.org"
+         cfg["publishing_targets"] = [{
+             "id": "command", "adapter": "command", "output_path": "command-destination",
+             "argv": argv, "timeout_seconds": timeout,

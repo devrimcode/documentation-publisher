@@ -1,0 +1,254 @@
+# PROJECT-SPECIFIC SMOKE FIXTURE — NOT A GENERIC OR LIVE DEPLOYMENT CONFIGURATION.
+# Demonstrates distinct Publisher/source/edit/issue/navigation identities with reserved https://example.invalid origin.
+# Keep publishing.dry_run: true. Live publishing with reserved example/test origins is rejected by semantic validation.
+# For a real deployment, create publisher.yml from publisher.example.yml and set reviewed repository URLs, exact allowed_hosts and a real public origin.
+schema_version: 2
+project:
+  id: documentation-project
+  title: Documentation Project
+  description: Published documentation
+  locale: en
+  timezone: UTC
+  license: ""
+  copyright: ""
+  logo: ""
+  favicon: ""
+  homepage_url: ""
+  repository_url: ""
+  maintainers: []
+
+# Identity 1: repository that contains the engine/configuration/workflow.
+publisher:
+  clone_url: https://github.com/devrimcode/documentation-publisher.git
+  ref: main
+  clone_timeout_seconds: 1800
+  allowed_hosts:
+    - github.com
+  auth:
+    mode: none
+
+# Identity 2..N: repositories whose source files are temporarily integrated.
+# A source must be a Git repository for the real git-subtree integration mode.
+sources:
+  - id: keycloak
+    vcs:
+      provider: git
+      clone_url: https://github.com/keycloak/keycloak.git
+      web_url: https://github.com/keycloak/keycloak
+      default_ref: main
+      ref_type: branch
+      depth: 1
+      clone_timeout_seconds: 1800
+      submodules: false
+      lfs: false
+      allowed_hosts:
+        - github.com
+      auth:
+        mode: none
+    root: .
+    integration:
+      mode: git_subtree
+      prefix: .publisher-sources/keycloak
+      squash: true
+      history: shallow
+
+# Separate the source checkout from the browser-facing GitHub editor target.
+authoring_targets:
+  - id: keycloak-fork-authoring
+    provider_label: github
+    web_url: https://github.com/devrimcode/keycloak
+    repository: devrimcode/keycloak
+    ref: main
+    ref_type: branch
+    source_id: keycloak
+    edit_url_template: "{web_url}/edit/{ref}/{path}"
+    mapping:
+      source_prefix: docs/documentation
+      target_prefix: docs/documentation
+    unresolved_policy: fail
+
+# Build tasks are plain executable + argv, never an implicit shell script.
+# Any build tool (Maven, Gradle, Sphinx, Antora, MkDocs, Docusaurus, etc.) can be called.
+build_tasks:
+  - id: build-keycloak-docs
+    source_id: keycloak
+    adapter: command
+    working_directory: .
+    working_directory_scope: source
+    argv:
+      - ./mvnw
+      - install
+      - -Dtest=!ExternalLinksTest
+      - -am
+      - -pl
+      - docs/documentation/tests,docs/documentation/dist
+      - -e
+      - -Pdocumentation
+    environment: {}
+    pass_environment:
+      - PATH
+      - HOME
+      - LANG
+      - JAVA_HOME
+      - MAVEN_ARGS
+    secret_environment: []
+    depends_on: []
+    timeout_seconds: 3600
+    retry: 0
+    retry_safe: false
+    retry_delay_seconds: 1
+    outputs:
+      - docs/documentation/target
+
+# Each component describes one independently selectable documentation section.
+components:
+  - id: keycloak-docs
+    title: Keycloak Documentation
+    description: Official Keycloak documentation
+    source_id: keycloak
+    route: keycloak
+    link_adapter: keycloak_asciidoc
+    tasks:
+      - build-keycloak-docs
+    output_path: docs/documentation/target
+    output_kind: directory
+    index_file: index.html
+    required_output_files:
+      - index.html
+    fallback:
+      mode: error
+    dependencies: []
+    version: current
+    locale: en
+    # Optional source map emitted by the configured build task. It is validated and removed
+    # from the public site. See docs/LINKS-AND-COMMUNICATION.md.
+    # provenance_file: publisher-provenance.json
+    link_overrides:
+      edit:
+        mode: inherit
+      communication: {}
+
+# Identity N+2: public site address. It is not inferred from publisher or source repository.
+site:
+  base_url: https://example.invalid
+  base_path: /keycloak-pages
+  output_directory: _site-smoke
+  components_root: docs
+  version: current
+  default_version: current
+  default_locale: en
+  component_path_template: "{components_root}/{version}/{route}"
+  version_index_path_template: "{components_root}/{version}/index.html"
+  default_component: keycloak-docs
+  root_index_target: ""
+  not_found_path: 404.html
+  generate_index: true
+  robots: noindex
+  canonical_base_url: ""
+  locales: [en]
+  versions: [current]
+  navigation: []
+  static_assets: []
+  trailing_slash: true
+
+# Edit-target behaviour: inherit, override, disable.
+# Override requires an explicit authoring_targets[].id.
+links:
+  edit:
+    mode: override
+    target_id: keycloak-fork-authoring
+    unresolved_policy: fail
+    require_markers: true
+  issues:
+    mode: override
+    source_prefixes:
+      - https://github.com/keycloak/keycloak/issues
+    target_url: https://github.com/keycloak/keycloak
+    url_template: "{target_url}/issues/{path}{query_suffix}{fragment_suffix}"
+    require_markers: true
+  navigation:
+    mode: override
+    source_prefixes:
+      - https://www.keycloak.org/docs/
+      - /docs/
+    relative_prefixes:
+      - ../
+    source_page_base_url: https://www.keycloak.org/docs/latest/
+    target_url: https://github.com/devrimcode/keycloak
+    target_ref: main
+    url_template: "{target_url}/tree/{target_ref}/{path}{query_suffix}{fragment_suffix}"
+    mapping:
+      strip_leading_segments: 1
+      target_prefix: docs/documentation
+      collapse_index_file: index.html
+    require_markers: true
+
+# Each channel independently supports inherit, override, disable.
+# inherit leaves the source project's original href/contact unchanged.
+communication:
+  email:
+    mode: inherit
+  issues:
+    mode: inherit
+  bug_reports:
+    mode: inherit
+  feature_requests:
+    mode: inherit
+  discussions:
+    mode: inherit
+  support:
+    mode: inherit
+  security:
+    mode: inherit
+  community:
+    mode: inherit
+  feedback:
+    mode: inherit
+
+validation:
+  require_no_symlinks: true
+  validate_local_links: true
+  validate_fragments: true
+  validate_css_assets: true
+  validate_edit_links: true
+  validate_communication_links: true
+  validate_external_links: false
+  allowed_external_hosts: []
+  validate_redirect_schemes:
+    - https
+    - http
+  unresolved_edit_policy: fail
+  require_build_manifest: true
+  max_site_bytes: 1000000000
+  max_files: 200000
+  max_archive_ratio: 1000
+  max_html_depth: 0
+  required_files: []
+
+workspace:
+  temp_root: .publisher-tmp
+  git_user_name: Documentation Publisher (temporary)
+  git_user_email: documentation-publisher@example.invalid
+  cleanup_on_success: true
+  cleanup_on_failure: true
+  fail_on_cleanup_error: true
+  cleanup_retries: 2
+  cleanup_delay_seconds: 0.2
+  keep_failed_workspace: false
+  keep_on_success: false
+  lock_timeout_seconds: 60
+
+# Identity N+3: where validated static output is delivered.
+publishing_targets:
+  - id: ci-artifact
+    adapter: artifact
+    output_path: _site-smoke
+publishing:
+  target_id: ci-artifact
+  artifact_name: documentation-site
+  retention_days: 1
+  dry_run: true
+  atomic: true
+  pre_publish_validation: true
+  timeout_seconds: 600
+

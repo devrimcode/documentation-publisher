@@ -1,0 +1,375 @@
+diff --git a/publisher_engine/engine.py b/publisher_engine/engine.py
+index f47c983..22932f1 100644
+--- a/publisher_engine/engine.py
++++ b/publisher_engine/engine.py
+@@ -427,101 +427,145 @@ def validate_site(site_root: Path, config: dict[str, Any]) -> list[str]:
+         p = safe_child(site_root, required)
+         if not p.is_file(): errors.append(f"Required output file missing: {required}")
+ 
+-    html_data: dict[str, _HTMLCollector] = {}
+-    if config["validation"].get("validate_local_links", True):
+-        for page in (p for p in files if p.suffix.lower() in {".html", ".htm"}):
+-            try:
+-                text = page.read_text(encoding="utf-8")
+-            except (UnicodeDecodeError, OSError) as exc:
+-                errors.append(f"Cannot read HTML {page.relative_to(site_root)}: {exc}")
+-                continue
+-            parser = _HTMLCollector()
+-            parser.feed(text)
+-            parser.close()
+-            max_depth = config["validation"].get("max_html_depth", 0)
+-            if max_depth and parser.max_depth > max_depth:
+-                errors.append(f"HTML nesting depth in {page.relative_to(site_root)} is {parser.max_depth}; maximum is {max_depth}")
+-            html_data[page] = parser
+-        for page, parser in html_data.items():
+-            errors.extend(f"{page.relative_to(site_root)}: {message}" for message in parser.errors)
+-            for tag, kind, ref in parser.refs:
+-                parsed = urlparse(ref)
+-                scheme = parsed.scheme.lower()
+-                allowed_redirect_schemes = set(config["validation"].get("validate_redirect_schemes", ["https", "http"]))
+-                if scheme == "data":
+-                    # Only allow passive raster image data on <img>. SVG and
+-                    # data URLs in scripts, frames, objects, embeds, links,
+-                    # media and srcset are deliberately excluded.
+-                    passive_image = (
+-                        tag == "img" and kind == "src"
+-                        and re.match(r"^data:image/(?:png|jpeg|gif|webp|avif);base64,", ref, re.I)
++    # Parse HTML independently from local-path existence validation. The
++    # individual validation switches control their own checks; disabling local
++    # link checks must not disable fragment, depth, external-host, or invariant
++    # security checks.
++    html_data: dict[Path, _HTMLCollector] = {}
++    validate_local_links = config["validation"].get("validate_local_links", True)
++    validate_fragments = config["validation"].get("validate_fragments", True)
++    validate_external_links = config["validation"].get("validate_external_links", False)
++    max_depth = config["validation"].get("max_html_depth", 0)
++    allowed_redirect_schemes = set(
++        config["validation"].get("validate_redirect_schemes", ["https", "http"])
++    )
++    allowed_external_hosts = {
++        value.lower() for value in config["validation"].get("allowed_external_hosts", [])
++    }
++
++    for page in (p for p in files if p.suffix.lower() in {".html", ".htm"}):
++        try:
++            text = page.read_text(encoding="utf-8")
++        except (UnicodeDecodeError, OSError) as exc:
++            # Reading is necessary for the always-on active-content checks as
++            # well as any optional HTML validation, so fail closed.
++            errors.append(f"Cannot read HTML {page.relative_to(site_root)}: {exc}")
++            continue
++        parser = _HTMLCollector()
++        parser.feed(text)
++        parser.close()
++        html_data[page] = parser
++        if max_depth and parser.max_depth > max_depth:
++            errors.append(
++                f"HTML nesting depth in {page.relative_to(site_root)} is {parser.max_depth}; maximum is {max_depth}"
++            )
++        # srcdoc and active data/URL schemes are publication safety invariants,
++        # not optional local-link linting.
++        errors.extend(
++            f"{page.relative_to(site_root)}: {message}" for message in parser.errors
++        )
++
++    for page, parser in html_data.items():
++        for tag, kind, ref in parser.refs:
++            parsed = urlparse(ref)
++            scheme = parsed.scheme.lower()
++            if scheme == "data":
++                # Only allow passive raster image data on <img>. SVG and data
++                # URLs in scripts, frames, objects, embeds, media and srcset
++                # are deliberately excluded.
++                passive_image = (
++                    tag == "img" and kind == "src"
++                    and re.match(r"^data:image/(?:png|jpeg|gif|webp|avif);base64,", ref, re.I)
++                )
++                if not passive_image:
++                    errors.append(
++                        f"Data URL is not permitted in {tag} {kind} on {page.relative_to(site_root)}"
+                     )
+-                    if not passive_image:
+-                        errors.append(f"Data URL is not permitted in {tag} {kind} on {page.relative_to(site_root)}")
+-                    continue
+-                if kind == "href" and scheme and scheme not in allowed_redirect_schemes | {"mailto", "tel"}:
+-                    errors.append(f"URL scheme is not permitted in {page.relative_to(site_root)}: {ref}")
+-                    continue
+-                if scheme in {"javascript", "vbscript", "file"}:
+-                    errors.append(f"Forbidden URL scheme in {page.relative_to(site_root)}: {ref}")
+-                    continue
+-                if scheme in {"http", "https"} or ref.startswith("//"):
+-                    external = parsed if scheme else urlparse("https:" + ref)
+-                    if not external.netloc:
+-                        errors.append(f"Malformed external URL in {page.relative_to(site_root)}: {ref}")
+-                    if config["validation"].get("validate_external_links", False):
+-                        allow = {x.lower() for x in config["validation"].get("allowed_external_hosts", [])}
+-                        if not allow or (external.hostname or "").lower() not in allow and "*" not in allow:
+-                            errors.append(f"External host is not allowed in {page.relative_to(site_root)}: {external.hostname}")
+-                    continue
+-                if scheme in {"mailto", "tel"}:
+-                    continue
+-                if scheme:
+-                    errors.append(f"Unsupported URL scheme in {page.relative_to(site_root)}: {ref}")
+-                    continue
+-                if ref.startswith("//"):
+-                    continue
+-                # Browsers normalize backslashes as path separators for special
+-                # schemes; validate the same effective path instead of treating
+-                # backslashes as harmless POSIX filename characters.
+-                raw_path = unquote(parsed.path).replace("\\", "/")
+-                if raw_path.startswith("/"):
+-                    rooted = raw_path.lstrip("/")
+-                    base_path = _site_base_path(config).strip("/")
+-                    if base_path and (rooted == base_path or rooted.startswith(base_path + "/")):
+-                        rooted = rooted[len(base_path):].lstrip("/")
+-                    target = (site_root / rooted).resolve()
+-                else:
+-                    target = (page.parent / raw_path).resolve() if raw_path else page.resolve()
+-                if not target.is_relative_to(site_root.resolve()):
+-                    errors.append(f"Link escapes site: {page.relative_to(site_root)} -> {ref}")
+-                    continue
+-                if raw_path and not target.is_file() and not (target.is_dir() and (target / "index.html").is_file()):
+-                    errors.append(f"Broken local link: {page.relative_to(site_root)} -> {ref}")
+-                    continue
+-                if parsed.fragment and config["validation"].get("validate_fragments", True):
+-                    fragment_page = target if raw_path else page
+-                    if fragment_page.is_dir() and (fragment_page / "index.html").is_file():
+-                        fragment_page = (fragment_page / "index.html").resolve()
+-                    if fragment_page.suffix.lower() in {".html", ".htm"} and fragment_page in html_data:
+-                        if unquote(parsed.fragment) not in html_data[fragment_page].ids:
+-                            errors.append(f"Missing fragment: {page.relative_to(site_root)} -> {ref}")
+-    if config["validation"].get("validate_css_assets", True):
++                continue
++            if kind == "href" and scheme and scheme not in allowed_redirect_schemes | {"mailto", "tel"}:
++                errors.append(f"URL scheme is not permitted in {page.relative_to(site_root)}: {ref}")
++                continue
++            if scheme in {"javascript", "vbscript", "file"}:
++                errors.append(f"Forbidden URL scheme in {page.relative_to(site_root)}: {ref}")
++                continue
++            if scheme in {"http", "https"} or ref.startswith("//"):
++                external = parsed if scheme else urlparse("https:" + ref)
++                if not external.netloc:
++                    errors.append(f"Malformed external URL in {page.relative_to(site_root)}: {ref}")
++                if validate_external_links:
++                    host = (external.hostname or "").lower()
++                    if not allowed_external_hosts or (host not in allowed_external_hosts and "*" not in allowed_external_hosts):
++                        errors.append(
++                            f"External host is not allowed in {page.relative_to(site_root)}: {external.hostname}"
++                        )
++                continue
++            if scheme in {"mailto", "tel"}:
++                continue
++            if scheme:
++                errors.append(f"Unsupported URL scheme in {page.relative_to(site_root)}: {ref}")
++                continue
++            if ref.startswith("//"):
++                continue
++
++            # Resolve local targets only when either existence checking or
++            # fragment checking needs them. Fragment checks remain independent
++            # from validate_local_links.
++            if not validate_local_links and not (validate_fragments and parsed.fragment):
++                continue
++            raw_path = unquote(parsed.path).replace("\\", "/")
++            if raw_path.startswith("/"):
++                rooted = raw_path.lstrip("/")
++                base_path = _site_base_path(config).strip("/")
++                if base_path and (rooted == base_path or rooted.startswith(base_path + "/")):
++                    rooted = rooted[len(base_path):].lstrip("/")
++                target = (site_root / rooted).resolve()
++            else:
++                target = (page.parent / raw_path).resolve() if raw_path else page.resolve()
++            if not target.is_relative_to(site_root.resolve()):
++                errors.append(f"Link escapes site: {page.relative_to(site_root)} -> {ref}")
++                continue
++            if validate_local_links and raw_path and not target.is_file() and not (
++                target.is_dir() and (target / "index.html").is_file()
++            ):
++                errors.append(f"Broken local link: {page.relative_to(site_root)} -> {ref}")
++                continue
++            if validate_fragments and parsed.fragment:
++                fragment_page = target if raw_path else page
++                if fragment_page.is_dir() and (fragment_page / "index.html").is_file():
++                    fragment_page = (fragment_page / "index.html").resolve()
++                if fragment_page.suffix.lower() in {".html", ".htm"} and fragment_page in html_data:
++                    if unquote(parsed.fragment) not in html_data[fragment_page].ids:
++                        errors.append(f"Missing fragment: {page.relative_to(site_root)} -> {ref}")
++
++    # External-host policy is independent of CSS asset existence validation.
++    # When CSS asset validation is disabled, external URLs are still checked
++    # against allowed_external_hosts if validate_external_links is enabled.
++    validate_css_assets = config["validation"].get("validate_css_assets", True)
++    if validate_css_assets or validate_external_links:
+         css_url = re.compile(r"url\(\s*['\"]?([^)'\"]+)['\"]?\s*\)|@import\s+['\"]([^'\"]+)['\"]", re.I)
+         for css in (p for p in files if p.suffix.lower() == ".css"):
+-            try: text = css.read_text(encoding="utf-8")
+-            except (UnicodeDecodeError, OSError): continue
++            try:
++                text = css.read_text(encoding="utf-8")
++            except (UnicodeDecodeError, OSError):
++                if validate_css_assets:
++                    errors.append(f"Cannot read CSS {css.relative_to(site_root)}")
++                continue
+             for match in css_url.finditer(text):
+                 ref = match.group(1) or match.group(2)
+                 parsed_ref = urlparse(ref)
+                 if parsed_ref.scheme in {"http", "https"} or ref.startswith("//"):
+-                    if config["validation"].get("validate_external_links", False):
++                    if validate_external_links:
+                         external = parsed_ref if parsed_ref.scheme else urlparse("https:" + ref)
+-                        allow = {x.lower() for x in config["validation"].get("allowed_external_hosts", [])}
+-                        if not allow or (external.hostname or "").lower() not in allow and "*" not in allow:
+-                            errors.append(f"External CSS host is not allowed in {css.relative_to(site_root)}: {external.hostname}")
++                        host = (external.hostname or "").lower()
++                        if not allowed_external_hosts or (host not in allowed_external_hosts and "*" not in allowed_external_hosts):
++                            errors.append(
++                                f"External CSS host is not allowed in {css.relative_to(site_root)}: {external.hostname}"
++                            )
++                    continue
++                if not validate_css_assets:
++                    continue
++                if parsed_ref.scheme == "data" or ref.startswith("#"):
+                     continue
+-                if parsed_ref.scheme == "data" or ref.startswith("#"): continue
+                 if parsed_ref.scheme:
+                     errors.append(f"Unsupported CSS URL scheme in {css.relative_to(site_root)}: {ref}")
+                     continue
+diff --git a/tests/test_engine.py b/tests/test_engine.py
+index d06d104..13dd38a 100644
+--- a/tests/test_engine.py
++++ b/tests/test_engine.py
+@@ -590,6 +590,134 @@ class SiteValidationTests(unittest.TestCase):
+         cfg["validation"]["require_build_manifest"] = False
+         return cfg
+ 
++    def test_fragment_validation_runs_when_local_link_validation_is_disabled(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "target.html").write_text('<h1 id="present">Target</h1>', encoding="utf-8")
++            (site / "index.html").write_text(
++                '<a href="target.html#missing">bad fragment</a>', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_fragments": True,
++                "validate_css_assets": False,
++                "max_html_depth": 0,
++            })
++            errors = validate_site(site, cfg)
++            self.assertTrue(any("Missing fragment" in item for item in errors), errors)
++            self.assertFalse(any("Broken local link" in item for item in errors), errors)
++
++    def test_disabling_local_link_validation_skips_missing_local_target_checks(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "index.html").write_text(
++                '<a href="not-present.html">not present</a>', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_fragments": False,
++                "validate_css_assets": False,
++            })
++            errors = validate_site(site, cfg)
++            self.assertFalse(any("Broken local link" in item for item in errors), errors)
++
++    def test_disabling_fragment_validation_does_not_disable_local_link_validation(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "target.html").write_text('<h1 id="present">Target</h1>', encoding="utf-8")
++            (site / "index.html").write_text(
++                '<a href="target.html#missing">bad fragment</a>', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": True,
++                "validate_fragments": False,
++                "validate_css_assets": False,
++            })
++            errors = validate_site(site, cfg)
++            self.assertFalse(any("Missing fragment" in item for item in errors), errors)
++            self.assertFalse(any("Broken local link" in item for item in errors), errors)
++
++    def test_external_host_allowlist_runs_when_local_link_validation_is_disabled(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "index.html").write_text(
++                '<a href="https://blocked.example.invalid/docs">external</a>', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_external_links": True,
++                "allowed_external_hosts": ["allowed.example.invalid"],
++                "validate_css_assets": False,
++            })
++            errors = validate_site(site, cfg)
++            self.assertTrue(any("External host is not allowed" in item for item in errors), errors)
++
++    def test_max_html_depth_runs_when_local_link_validation_is_disabled(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "index.html").write_text(
++                "<html><body><div><section><p>too deep</p></section></div></body></html>",
++                encoding="utf-8",
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_css_assets": False,
++                "max_html_depth": 3,
++            })
++            errors = validate_site(site, cfg)
++            self.assertTrue(any("HTML nesting depth" in item for item in errors), errors)
++
++    def test_css_external_host_allowlist_runs_when_css_asset_validation_is_disabled(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "index.html").write_text("<html><body>ok</body></html>", encoding="utf-8")
++            (site / "style.css").write_text(
++                '@import url("https://blocked.example.invalid/remote.css");', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_css_assets": False,
++                "validate_external_links": True,
++                "allowed_external_hosts": ["allowed.example.invalid"],
++            })
++            errors = validate_site(site, cfg)
++            self.assertTrue(any("External CSS host is not allowed" in item for item in errors), errors)
++            self.assertFalse(any("Broken CSS asset" in item for item in errors), errors)
++
++    def test_active_url_schemes_remain_blocked_when_local_link_validation_is_disabled(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            site = root / "site"
++            site.mkdir()
++            (site / "index.html").write_text(
++                '<a href="javascript:alert(1)">unsafe</a>', encoding="utf-8"
++            )
++            cfg = self._config(root)
++            cfg["validation"].update({
++                "validate_local_links": False,
++                "validate_css_assets": False,
++            })
++            errors = validate_site(site, cfg)
++            self.assertTrue(any("URL scheme is not permitted" in item for item in errors), errors)
++
+     def test_broken_links_fragments_css_assets_and_active_schemes_are_reported(self):
+         with tempfile.TemporaryDirectory() as td:
+             root = Path(td)

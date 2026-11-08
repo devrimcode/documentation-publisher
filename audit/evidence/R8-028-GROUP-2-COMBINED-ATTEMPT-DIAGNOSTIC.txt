@@ -1,0 +1,5 @@
+Combined invocation diagnostic — not an accepted test result
+
+A shell pipeline that ran the main suite and then invoked tests/test_process.py in the same shell exceeded its external timeout after four visible process-test dots. The shell did not produce a pytest summary, so this attempt is NOT counted as a pass or a fail in the totals.
+
+Follow-up: tests/test_process.py was run as a separate command with PYTHONWARNINGS=error::ResourceWarning and a 45-second outer timeout on three independent consecutive invocations. Each invocation exited 0 and reported 6 passed (8.83s, 9.20s, 8.97s). The current accepted count is therefore based on the three completed independent runs, while the earlier combined-shell hang remains disclosed as an execution-instability observation.

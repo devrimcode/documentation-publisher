@@ -1,0 +1,264 @@
+# Generic Documentation Publisher v2
+# Copy to publisher.yml and replace all <...> values.
+# No repository owner, account, project, branch, or provider is assumed by this template.
+# Run: python -m publisher_engine.cli validate-config --config publisher.yml
+schema_version: 2
+project:
+  id: documentation-project
+  title: Documentation Project
+  description: Published documentation
+  locale: en
+  timezone: UTC
+  license: ""
+  copyright: ""
+  logo: ""
+  favicon: ""
+  homepage_url: ""
+  repository_url: ""
+  maintainers: []
+
+# Identity 1: repository that contains the engine/configuration/workflow.
+publisher:
+  clone_url: <PUBLISHER_GIT_CLONE_URL>
+  ref: <PUBLISHER_BUILD_REF>
+  clone_timeout_seconds: 1800
+  allowed_hosts: [<PUBLISHER_ALLOWED_HOST>]
+  auth:
+    mode: none
+
+# Identity 2..N: repositories whose source files are temporarily integrated.
+# A source must be a Git repository for the real git-subtree integration mode.
+sources:
+  - id: documentation-source
+    vcs:
+      provider: git
+      clone_url: <BUILD_SOURCE_GIT_URL>
+      web_url: <BUILD_SOURCE_BROWSER_URL>
+      default_ref: <BUILD_SOURCE_REF>
+      ref_type: branch
+      depth: 1
+      clone_timeout_seconds: 1800
+      submodules: false
+      lfs: false
+      allowed_hosts: [<SOURCE_ALLOWED_HOST>]
+      auth:
+        mode: none
+    root: .
+    integration:
+      mode: git_subtree
+      prefix: .publisher-sources/documentation-source
+      squash: true
+      history: shallow
+
+# Identity N+1: where authors edit the original source file.
+# This can be a different repository, ref, and directory mapping than the build source.
+authoring_targets:
+  - id: documentation-authoring
+    provider_label: generic-git-web
+    web_url: <AUTHORING_REPOSITORY_WEB_URL>
+    repository: <AUTHORING_REPOSITORY_IDENTIFIER>
+    ref: <AUTHORING_REF>
+    ref_type: branch
+    source_id: documentation-source
+    edit_url_template: "{web_url}/edit/{ref}/{path}"
+    mapping:
+      source_prefix: <SOURCE_DOCUMENTATION_ROOT>
+      target_prefix: <AUTHORING_DOCUMENTATION_ROOT>
+      rules: []
+    unresolved_policy: fail
+
+# Build tasks are plain executable + argv, never an implicit shell script.
+# Any build tool (Maven, Gradle, Sphinx, Antora, MkDocs, Docusaurus, etc.) can be called.
+build_tasks:
+  - id: build-guide
+    source_id: documentation-source
+    adapter: command
+    working_directory: .
+    working_directory_scope: source
+    argv:
+      - <BUILD_EXECUTABLE>
+      - <BUILD_ARGUMENT_1>
+      - <BUILD_ARGUMENT_2>
+    environment: {}
+    pass_environment: [PATH, HOME, LANG]
+    secret_environment: []
+    depends_on: []
+    timeout_seconds: 3600
+    retry: 0
+    retry_safe: false
+    retry_delay_seconds: 1
+    outputs:
+      - <GENERATED_OUTPUT_DIRECTORY>
+
+# Each component describes one independently selectable documentation section.
+components:
+  - id: guide
+    title: Guide
+    description: Main documentation guide
+    source_id: documentation-source
+    route: guide
+    tasks: [build-guide]
+    output_path: <GENERATED_OUTPUT_DIRECTORY>
+    output_kind: directory
+    index_file: index.html
+    required_output_files: [index.html]
+    fallback:
+      # inherit preserves the original component default by redirecting to its explicit URL.
+      # Other modes: redirect, stub, omit, error.
+      mode: inherit
+      url: <ORIGINAL_COMPONENT_DEFAULT_URL>
+    dependencies: []
+    version: current
+    locale: en
+    # Optional source map emitted by the configured build task. It is validated and removed
+    # from the public site. See docs/LINKS-AND-COMMUNICATION.md.
+    # provenance_file: publisher-provenance.json
+    link_overrides:
+      edit:
+        mode: inherit
+      communication: {}
+
+# Identity N+2: public site address. It is not inferred from publisher or source repository.
+site:
+  base_url: <PUBLIC_SITE_BASE_URL>
+  base_path: <PUBLIC_SITE_BASE_PATH>
+  output_directory: _site
+  components_root: docs
+  version: current
+  default_version: current
+  default_locale: en
+  component_path_template: "{components_root}/{version}/{route}"
+  version_index_path_template: "{components_root}/{version}/index.html"
+  default_component: guide
+  root_index_target: ""
+  not_found_path: 404.html
+  generate_index: true
+  robots: noindex
+  canonical_base_url: ""
+  locales: [en]
+  versions: [current]
+  navigation: []
+  static_assets: []
+  trailing_slash: true
+
+# Edit-target behaviour: inherit, override, disable.
+# Override requires an explicit authoring_targets[].id.
+links:
+  edit:
+    mode: inherit
+    unresolved_policy: fail
+    require_markers: true
+  # Issues and neighboring documentation pages are independently targetable.
+  # Use override plus an explicit target_url, url_template and source_prefixes
+  # when they should point somewhere other than the original source markup.
+  issues:
+    mode: inherit
+    require_markers: true
+  navigation:
+    mode: inherit
+    require_markers: true
+
+# Each channel independently supports inherit, override, disable.
+# inherit leaves the source project's original href/contact unchanged.
+communication:
+  email:
+    mode: inherit
+  issues:
+    mode: inherit
+  bug_reports:
+    mode: inherit
+  feature_requests:
+    mode: inherit
+  discussions:
+    mode: inherit
+  support:
+    mode: inherit
+  security:
+    mode: inherit
+  community:
+    mode: inherit
+  feedback:
+    mode: inherit
+
+validation:
+  require_no_symlinks: true
+  validate_local_links: true
+  validate_fragments: true
+  validate_css_assets: true
+  validate_edit_links: true
+  validate_communication_links: true
+  validate_external_links: false
+  allowed_external_hosts: []
+  validate_redirect_schemes: [https]
+  unresolved_edit_policy: fail
+  require_build_manifest: true
+  max_site_bytes: 1000000000
+  max_files: 200000
+  max_archive_ratio: 1000
+  max_html_depth: 0
+  required_files: []
+
+workspace:
+  temp_root: .publisher-tmp
+  git_user_name: Documentation Publisher (temporary)
+  git_user_email: documentation-publisher@example.invalid
+  cleanup_on_success: true
+  cleanup_on_failure: true
+  fail_on_cleanup_error: true
+  cleanup_retries: 2
+  cleanup_delay_seconds: 0.2
+  keep_failed_workspace: false
+  keep_on_success: false
+  lock_timeout_seconds: 60
+
+# Identity N+3: where validated static output is delivered.
+publishing_targets:
+  - id: ci-artifact
+    adapter: artifact
+    output_path: _site
+publishing:
+  target_id: ci-artifact
+  artifact_name: documentation-site
+  retention_days: 1
+  dry_run: true
+  atomic: true
+  pre_publish_validation: true
+  timeout_seconds: 600
+
+triggers:
+  manual: true
+  push_branches: [<PUBLISHER_DEPLOY_BRANCH>]
+  pull_request: true
+  schedule: []
+  workflow_call: false
+  paths: []
+  concurrency_group: documentation-publisher
+  cancel_in_progress: true
+  deploy_branch: <PUBLISHER_DEPLOY_BRANCH>
+
+# Optional workflow generator. Action refs must be manually supplied full commit SHAs.
+# This generator currently creates a GitHub Actions + GitHub Pages workflow only.
+# Other CI systems call `publisher_engine build` and use their own pipeline.
+workflow:
+  provider: github_actions
+  file: .github/workflows/documentation-publisher.yml
+  config_file: publisher.yml
+  python_version: "3.13"
+  runs_on: ubuntu-latest
+  deploy_environment: documentation-site
+  build_timeout_minutes: 360
+  deploy_timeout_minutes: 30
+  include_hidden_files: true
+  secrets: {}
+  environment: {}
+  build_permissions:
+    contents: read
+  deploy_permissions:
+    pages: write
+    id-token: write
+    actions: read
+  actions:
+    checkout: <ACTIONS_CHECKOUT_FULL_COMMIT_SHA>
+    setup_python: <ACTIONS_SETUP_PYTHON_FULL_COMMIT_SHA>
+    upload_pages_artifact: <ACTIONS_UPLOAD_PAGES_ARTIFACT_FULL_COMMIT_SHA>
+    deploy_pages: <ACTIONS_DEPLOY_PAGES_FULL_COMMIT_SHA>

@@ -1,0 +1,2 @@
+JSON Schema Draft 2020-12 meta-validation: PASS
+Top-level properties: 18

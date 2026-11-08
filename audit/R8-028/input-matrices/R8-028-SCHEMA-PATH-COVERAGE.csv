@@ -1,0 +1,259 @@
+schema_path,path_kind,schema_pointer,json_type,required_in_parent,enum_or_const,default,dynamic_key_domain,coverage_artifact
+build_tasks[].environment.<ENV_NAME>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/build_tasks/items/$ref=#/$defs/task/properties/environment/additionalProperties,string,false,,,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/communication/propertyNames,ref:#/$defs/communicationChannel,false,,,"^[a-z][a-z0-9_-]{0,63}$",DYNAMIC_KEY_PATTERN_CONTRACT
+communication.<channel>.query.<key>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/query/propertyNames,string,false,,,"^[a-z][a-z0-9_]{0,63}$",DYNAMIC_KEY_PATTERN_CONTRACT
+components[].link_overrides.communication.<channel>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/propertyNames,ref:#/$defs/communicationChannel,false,,,"^[a-z][a-z0-9_-]{0,63}$",DYNAMIC_KEY_PATTERN_CONTRACT
+components[].link_overrides.communication.<channel>.query.<key>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/query/propertyNames,string,false,,,"^[a-z][a-z0-9_]{0,63}$",DYNAMIC_KEY_PATTERN_CONTRACT
+profiles.<PROFILE_NAME>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/profiles/propertyNames,object,false,,,"^[a-z][a-z0-9_-]{0,63}$",PROFILE_NAME_CONTRACT
+publishing_targets[].environment.<ENV_NAME>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/environment/additionalProperties,string,false,,,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+workflow.build_permissions.<permission>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/workflow/properties/build_permissions/additionalProperties,string,false,"[""read"", ""write"", ""none""]",,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+workflow.deploy_permissions.<permission>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/workflow/properties/deploy_permissions/additionalProperties,string,false,"[""read"", ""write"", ""none""]",,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+workflow.environment.<ENV_NAME>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/workflow/properties/environment/additionalProperties,string,false,,,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+workflow.secrets.<ENV_NAME>,DYNAMIC_MAP_KEY_DOMAIN,#/properties/workflow/properties/secrets/additionalProperties,string,false,,,Map keys are runtime-defined; inspect the additionalProperties value schema.,DYNAMIC_CONTRACT_MATRIX
+active_profiles,SCHEMA_PROPERTY,#/properties/active_profiles/items/pattern,array,false,,,"^[a-z][a-z0-9_-]{0,63}$",PROFILE_NAME_CONTRACT
+authoring_targets,SCHEMA_PROPERTY,#/properties/authoring_targets,array,false,,[],,STATIC_OPTION_MATRIX
+authoring_targets[].edit_url_template,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/edit_url_template,string,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].id,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping,ref:#/$defs/pathMapping,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping.rules,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping/$ref=#/$defs/pathMapping/properties/rules,array,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping.rules[].source,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping/$ref=#/$defs/pathMapping/properties/rules/items/properties/source,string,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping.rules[].target,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping/$ref=#/$defs/pathMapping/properties/rules/items/properties/target,string,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping.source_prefix,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping/$ref=#/$defs/pathMapping/properties/source_prefix,string,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].mapping.target_prefix,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/mapping/$ref=#/$defs/pathMapping/properties/target_prefix,string,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].provider,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/provider,string,false,,,,DEPRECATED_METADATA_ALIAS
+authoring_targets[].ref,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/ref,string,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].ref_type,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/ref_type,string,false,"[""branch"", ""tag"", ""commit""]",,,STATIC_OPTION_MATRIX
+authoring_targets[].repository,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/repository,string,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].source_id,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/source_id,ref:#/$defs/id,false,,,,STATIC_OPTION_MATRIX
+authoring_targets[].unresolved_policy,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/unresolved_policy,string,false,"[""fail"", ""omit""]",,,STATIC_OPTION_MATRIX
+authoring_targets[].web_url,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/web_url,string,true,,,,STATIC_OPTION_MATRIX
+build_tasks,SCHEMA_PROPERTY,#/properties/build_tasks,array,true,,,,STATIC_OPTION_MATRIX
+build_tasks[].adapter,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/adapter,string,true,"[""command""]",,,STATIC_OPTION_MATRIX
+build_tasks[].argv,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/argv,array,true,,,,STATIC_OPTION_MATRIX
+build_tasks[].depends_on,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/depends_on,array,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].environment,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/environment,object,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].id,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+build_tasks[].outputs,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/outputs,array,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].pass_environment,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/pass_environment,array,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].retry,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/retry,integer,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].retry_delay_seconds,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/retry_delay_seconds,number,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].retry_safe,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/retry_safe,boolean,false,,false,,STATIC_OPTION_MATRIX
+build_tasks[].secret_environment,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/secret_environment,array,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].source_id,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/source_id,ref:#/$defs/id,false,,,,STATIC_OPTION_MATRIX
+build_tasks[].timeout_seconds,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/timeout_seconds,integer,true,,,,STATIC_OPTION_MATRIX
+build_tasks[].working_directory,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/working_directory,string,true,,,,STATIC_OPTION_MATRIX
+build_tasks[].working_directory_scope,SCHEMA_PROPERTY,#/properties/build_tasks/items/$ref=#/$defs/task/properties/working_directory_scope,string,false,"[""source"", ""publisher""]",,,STATIC_OPTION_MATRIX
+communication,SCHEMA_PROPERTY,#/properties/communication,object,true,,,,STATIC_OPTION_MATRIX
+communication.<channel>.address,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/address,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.allowed_hosts,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/allowed_hosts,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.bcc,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/bcc,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.body,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/body,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.cc,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/cc,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.mode,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/mode,ref:#/$defs/mode,true,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.private_target,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/private_target,boolean,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.provider,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/provider,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.query,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/query,object,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.require_markers,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/require_markers,boolean,false,,true,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.subject,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/subject,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.target,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/target,string,false,"[""_self"", ""_blank""]",,,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.url_template,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/url_template,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components,SCHEMA_PROPERTY,#/properties/components,array,true,,,,STATIC_OPTION_MATRIX
+components[].archive_root,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/archive_root,string,false,,,,STATIC_OPTION_MATRIX
+components[].dependencies,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/dependencies,array,false,,,,STATIC_OPTION_MATRIX
+components[].description,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/description,string,false,,,,STATIC_OPTION_MATRIX
+components[].fallback,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/fallback,object,true,,,,STATIC_OPTION_MATRIX
+components[].fallback.mode,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/fallback/properties/mode,string,true,"[""inherit"", ""redirect"", ""stub"", ""omit"", ""error""]",,,STATIC_OPTION_MATRIX
+components[].fallback.url,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/fallback/properties/url,string,false,,,,STATIC_OPTION_MATRIX
+components[].id,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+components[].index_file,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/index_file,string,false,,"""index.html""",,STATIC_OPTION_MATRIX
+components[].link_adapter,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_adapter,string,false,"[""keycloak_asciidoc""]",,,STATIC_OPTION_MATRIX
+components[].link_overrides,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides,ref:#/$defs/componentLinkOverrides,false,,,,STATIC_OPTION_MATRIX
+components[].link_overrides.communication,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication,object,false,,,,STATIC_OPTION_MATRIX
+components[].link_overrides.communication.<channel>.address,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/address,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.allowed_hosts,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/allowed_hosts,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.bcc,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/bcc,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.body,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/body,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.cc,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/cc,array,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.mode,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/mode,ref:#/$defs/mode,true,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.private_target,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/private_target,boolean,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.provider,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/provider,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.query,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/query,object,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.require_markers,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/require_markers,boolean,false,,true,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.subject,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/subject,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.target,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/target,string,false,"[""_self"", ""_blank""]",,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.communication.<channel>.url_template,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/url_template,string,false,,,,DYNAMIC_CONTRACT_MATRIX
+components[].link_overrides.edit,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/edit,ref:#/$defs/editLink,false,,,,STATIC_OPTION_MATRIX
+components[].link_overrides.edit.mode,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/edit/$ref=#/$defs/editLink/properties/mode,ref:#/$defs/mode,true,,,,STATIC_OPTION_MATRIX
+components[].link_overrides.edit.require_markers,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/edit/$ref=#/$defs/editLink/properties/require_markers,boolean,false,,true,,STATIC_OPTION_MATRIX
+components[].link_overrides.edit.target_id,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/edit/$ref=#/$defs/editLink/properties/target_id,ref:#/$defs/id,false,,,,STATIC_OPTION_MATRIX
+components[].link_overrides.edit.unresolved_policy,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/link_overrides/$ref=#/$defs/componentLinkOverrides/properties/edit/$ref=#/$defs/editLink/properties/unresolved_policy,string,false,"[""fail"", ""omit""]",,,STATIC_OPTION_MATRIX
+components[].locale,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/locale,string,false,,,,STATIC_OPTION_MATRIX
+components[].output_kind,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/output_kind,string,false,"[""directory"", ""file"", ""zip"", ""tar""]","""directory""",,STATIC_OPTION_MATRIX
+components[].output_path,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/output_path,string,true,,,,STATIC_OPTION_MATRIX
+components[].provenance_file,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/provenance_file,string,false,,,,STATIC_OPTION_MATRIX
+components[].required_output_files,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/required_output_files,array,false,,,,STATIC_OPTION_MATRIX
+components[].route,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/route,string,true,,,,STATIC_OPTION_MATRIX
+components[].source_id,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/source_id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+components[].tasks,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/tasks,array,true,,,,STATIC_OPTION_MATRIX
+components[].title,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/title,string,true,,,,STATIC_OPTION_MATRIX
+components[].version,SCHEMA_PROPERTY,#/properties/components/items/$ref=#/$defs/component/properties/version,string,false,,,,STATIC_OPTION_MATRIX
+links,SCHEMA_PROPERTY,#/properties/links,object,true,,,,STATIC_OPTION_MATRIX
+links.edit,SCHEMA_PROPERTY,#/properties/links/properties/edit,ref:#/$defs/editLink,false,,,,STATIC_OPTION_MATRIX
+links.edit.mode,SCHEMA_PROPERTY,#/properties/links/properties/edit/$ref=#/$defs/editLink/properties/mode,ref:#/$defs/mode,true,,,,STATIC_OPTION_MATRIX
+links.edit.require_markers,SCHEMA_PROPERTY,#/properties/links/properties/edit/$ref=#/$defs/editLink/properties/require_markers,boolean,false,,true,,STATIC_OPTION_MATRIX
+links.edit.target_id,SCHEMA_PROPERTY,#/properties/links/properties/edit/$ref=#/$defs/editLink/properties/target_id,ref:#/$defs/id,false,,,,STATIC_OPTION_MATRIX
+links.edit.unresolved_policy,SCHEMA_PROPERTY,#/properties/links/properties/edit/$ref=#/$defs/editLink/properties/unresolved_policy,string,false,"[""fail"", ""omit""]",,,STATIC_OPTION_MATRIX
+profiles,SCHEMA_PROPERTY,#/properties/profiles,object,false,,,,STATIC_OPTION_MATRIX
+project,SCHEMA_PROPERTY,#/properties/project,object,true,,,,STATIC_OPTION_MATRIX
+project.copyright,SCHEMA_PROPERTY,#/properties/project/properties/copyright,string,false,,,,STATIC_OPTION_MATRIX
+project.description,SCHEMA_PROPERTY,#/properties/project/properties/description,string,false,,,,STATIC_OPTION_MATRIX
+project.favicon,SCHEMA_PROPERTY,#/properties/project/properties/favicon,string,false,,,,STATIC_OPTION_MATRIX
+project.homepage_url,SCHEMA_PROPERTY,#/properties/project/properties/homepage_url,string,false,,,,STATIC_OPTION_MATRIX
+project.id,SCHEMA_PROPERTY,#/properties/project/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+project.license,SCHEMA_PROPERTY,#/properties/project/properties/license,string,false,,,,STATIC_OPTION_MATRIX
+project.locale,SCHEMA_PROPERTY,#/properties/project/properties/locale,string,true,,,,STATIC_OPTION_MATRIX
+project.logo,SCHEMA_PROPERTY,#/properties/project/properties/logo,string,false,,,,STATIC_OPTION_MATRIX
+project.maintainers,SCHEMA_PROPERTY,#/properties/project/properties/maintainers,array,false,,,,STATIC_OPTION_MATRIX
+project.repository_url,SCHEMA_PROPERTY,#/properties/project/properties/repository_url,string,false,,,,STATIC_OPTION_MATRIX
+project.timezone,SCHEMA_PROPERTY,#/properties/project/properties/timezone,string,false,,,,STATIC_OPTION_MATRIX
+project.title,SCHEMA_PROPERTY,#/properties/project/properties/title,string,true,,,,STATIC_OPTION_MATRIX
+publisher,SCHEMA_PROPERTY,#/properties/publisher,object,true,,,,STATIC_OPTION_MATRIX
+publisher.allowed_hosts,SCHEMA_PROPERTY,#/properties/publisher/properties/allowed_hosts,array,false,,,,STATIC_OPTION_MATRIX
+publisher.auth,SCHEMA_PROPERTY,#/properties/publisher/properties/auth,ref:#/$defs/auth,false,,,,STATIC_OPTION_MATRIX
+publisher.auth.mode,SCHEMA_PROPERTY,#/properties/publisher/properties/auth/$ref=#/$defs/auth/properties/mode,string,false,"[""none"", ""environment"", ""ssh_agent""]",,,STATIC_OPTION_MATRIX
+publisher.auth.secret_env,SCHEMA_PROPERTY,#/properties/publisher/properties/auth/$ref=#/$defs/auth/properties/secret_env,string,false,,,,STATIC_OPTION_MATRIX
+publisher.auth.username_env,SCHEMA_PROPERTY,#/properties/publisher/properties/auth/$ref=#/$defs/auth/properties/username_env,string,false,,,,STATIC_OPTION_MATRIX
+publisher.clone_timeout_seconds,SCHEMA_PROPERTY,#/properties/publisher/properties/clone_timeout_seconds,integer,false,,1800,,STATIC_OPTION_MATRIX
+publisher.clone_url,SCHEMA_PROPERTY,#/properties/publisher/properties/clone_url,string,true,,,,STATIC_OPTION_MATRIX
+publisher.ref,SCHEMA_PROPERTY,#/properties/publisher/properties/ref,string,true,,,,STATIC_OPTION_MATRIX
+publishing,SCHEMA_PROPERTY,#/properties/publishing,object,true,,,,STATIC_OPTION_MATRIX
+publishing.artifact_name,SCHEMA_PROPERTY,#/properties/publishing/properties/artifact_name,string,false,,,,STATIC_OPTION_MATRIX
+publishing.atomic,SCHEMA_PROPERTY,#/properties/publishing/properties/atomic,boolean,false,,,,STATIC_OPTION_MATRIX
+publishing.dry_run,SCHEMA_PROPERTY,#/properties/publishing/properties/dry_run,boolean,false,,,,STATIC_OPTION_MATRIX
+publishing.pre_publish_validation,SCHEMA_PROPERTY,#/properties/publishing/properties/pre_publish_validation,boolean,false,,,,STATIC_OPTION_MATRIX
+publishing.retention_days,SCHEMA_PROPERTY,#/properties/publishing/properties/retention_days,integer,false,,,,STATIC_OPTION_MATRIX
+publishing.target_id,SCHEMA_PROPERTY,#/properties/publishing/properties/target_id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+publishing.timeout_seconds,SCHEMA_PROPERTY,#/properties/publishing/properties/timeout_seconds,integer,false,,,,STATIC_OPTION_MATRIX
+publishing_targets,SCHEMA_PROPERTY,#/properties/publishing_targets,array,true,,,,STATIC_OPTION_MATRIX
+publishing_targets[].adapter,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/adapter,string,true,"[""artifact"", ""filesystem"", ""command""]",,,STATIC_OPTION_MATRIX
+publishing_targets[].allow_external_destination,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/allow_external_destination,boolean,false,,false,,STATIC_OPTION_MATRIX
+publishing_targets[].argv,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/argv,array,false,,,,STATIC_OPTION_MATRIX
+publishing_targets[].environment,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/environment,object,false,,,,STATIC_OPTION_MATRIX
+publishing_targets[].id,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+publishing_targets[].output_path,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/output_path,string,true,,,,STATIC_OPTION_MATRIX
+publishing_targets[].pass_environment,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/pass_environment,array,false,,,,STATIC_OPTION_MATRIX
+publishing_targets[].replace_existing,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/replace_existing,boolean,false,,false,,STATIC_OPTION_MATRIX
+publishing_targets[].secret_environment,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/secret_environment,array,false,,,,STATIC_OPTION_MATRIX
+publishing_targets[].timeout_seconds,SCHEMA_PROPERTY,#/properties/publishing_targets/items/$ref=#/$defs/publishingTarget/properties/timeout_seconds,integer,false,,,,STATIC_OPTION_MATRIX
+schema_version,SCHEMA_PROPERTY,#/properties/schema_version,const,true,2,,,STATIC_OPTION_MATRIX
+site,SCHEMA_PROPERTY,#/properties/site,object,true,,,,STATIC_OPTION_MATRIX
+site.base_path,SCHEMA_PROPERTY,#/properties/site/properties/base_path,string,false,,,,STATIC_OPTION_MATRIX
+site.base_url,SCHEMA_PROPERTY,#/properties/site/properties/base_url,string,true,,,,STATIC_OPTION_MATRIX
+site.canonical_base_url,SCHEMA_PROPERTY,#/properties/site/properties/canonical_base_url,string,false,,,,STATIC_OPTION_MATRIX
+site.component_path_template,SCHEMA_PROPERTY,#/properties/site/properties/component_path_template,string,false,,,,STATIC_OPTION_MATRIX
+site.components_root,SCHEMA_PROPERTY,#/properties/site/properties/components_root,string,true,,,,STATIC_OPTION_MATRIX
+site.default_component,SCHEMA_PROPERTY,#/properties/site/properties/default_component,string,false,,,,STATIC_OPTION_MATRIX
+site.default_locale,SCHEMA_PROPERTY,#/properties/site/properties/default_locale,string,false,,,,STATIC_OPTION_MATRIX
+site.default_version,SCHEMA_PROPERTY,#/properties/site/properties/default_version,string,false,,,,STATIC_OPTION_MATRIX
+site.generate_index,SCHEMA_PROPERTY,#/properties/site/properties/generate_index,boolean,false,,true,,STATIC_OPTION_MATRIX
+site.locales,SCHEMA_PROPERTY,#/properties/site/properties/locales,array,false,,,,STATIC_OPTION_MATRIX
+site.navigation,SCHEMA_PROPERTY,#/properties/site/properties/navigation,array,false,,,,STATIC_OPTION_MATRIX
+site.navigation[].group,SCHEMA_PROPERTY,#/properties/site/properties/navigation/items/properties/group,string,false,,,,STATIC_OPTION_MATRIX
+site.navigation[].href,SCHEMA_PROPERTY,#/properties/site/properties/navigation/items/properties/href,string,true,,,,STATIC_OPTION_MATRIX
+site.navigation[].label,SCHEMA_PROPERTY,#/properties/site/properties/navigation/items/properties/label,string,true,,,,STATIC_OPTION_MATRIX
+site.navigation[].order,SCHEMA_PROPERTY,#/properties/site/properties/navigation/items/properties/order,integer,false,,,,STATIC_OPTION_MATRIX
+site.not_found_path,SCHEMA_PROPERTY,#/properties/site/properties/not_found_path,string,false,,,,STATIC_OPTION_MATRIX
+site.output_directory,SCHEMA_PROPERTY,#/properties/site/properties/output_directory,string,true,,,,STATIC_OPTION_MATRIX
+site.robots,SCHEMA_PROPERTY,#/properties/site/properties/robots,string,false,"[""index"", ""noindex""]",,,STATIC_OPTION_MATRIX
+site.root_index_target,SCHEMA_PROPERTY,#/properties/site/properties/root_index_target,string,false,,,,STATIC_OPTION_MATRIX
+site.static_assets,SCHEMA_PROPERTY,#/properties/site/properties/static_assets,array,false,,,,STATIC_OPTION_MATRIX
+site.static_assets[].destination,SCHEMA_PROPERTY,#/properties/site/properties/static_assets/items/properties/destination,string,true,,,,STATIC_OPTION_MATRIX
+site.static_assets[].source,SCHEMA_PROPERTY,#/properties/site/properties/static_assets/items/properties/source,string,true,,,,STATIC_OPTION_MATRIX
+site.trailing_slash,SCHEMA_PROPERTY,#/properties/site/properties/trailing_slash,boolean,false,,,,STATIC_OPTION_MATRIX
+site.version,SCHEMA_PROPERTY,#/properties/site/properties/version,string,true,,,,STATIC_OPTION_MATRIX
+site.version_index_path_template,SCHEMA_PROPERTY,#/properties/site/properties/version_index_path_template,string,false,,,,STATIC_OPTION_MATRIX
+site.versions,SCHEMA_PROPERTY,#/properties/site/properties/versions,array,false,,,,STATIC_OPTION_MATRIX
+sources,SCHEMA_PROPERTY,#/properties/sources,array,true,,,,STATIC_OPTION_MATRIX
+sources[].id,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/id,ref:#/$defs/id,true,,,,STATIC_OPTION_MATRIX
+sources[].integration,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/integration,object,true,,,,STATIC_OPTION_MATRIX
+sources[].integration.history,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/integration/properties/history,string,false,"[""shallow"", ""full""]",,,STATIC_OPTION_MATRIX
+sources[].integration.mode,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/integration/properties/mode,const,true,"""git_subtree""",,,STATIC_OPTION_MATRIX
+sources[].integration.prefix,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/integration/properties/prefix,string,true,,,,STATIC_OPTION_MATRIX
+sources[].integration.squash,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/integration/properties/squash,boolean,true,,,,STATIC_OPTION_MATRIX
+sources[].root,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/root,string,true,,,,STATIC_OPTION_MATRIX
+sources[].vcs,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs,object,true,,,,STATIC_OPTION_MATRIX
+sources[].vcs.allowed_hosts,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/allowed_hosts,array,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.auth,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/auth,ref:#/$defs/auth,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.auth.mode,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/auth/$ref=#/$defs/auth/properties/mode,string,false,"[""none"", ""environment"", ""ssh_agent""]",,,STATIC_OPTION_MATRIX
+sources[].vcs.auth.secret_env,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/auth/$ref=#/$defs/auth/properties/secret_env,string,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.auth.username_env,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/auth/$ref=#/$defs/auth/properties/username_env,string,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.clone_timeout_seconds,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/clone_timeout_seconds,integer,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.clone_url,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/clone_url,string,true,,,,STATIC_OPTION_MATRIX
+sources[].vcs.default_ref,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/default_ref,string,true,,,,STATIC_OPTION_MATRIX
+sources[].vcs.depth,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/depth,integer,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.lfs,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/lfs,boolean,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.provider,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/provider/const,string,true,const: git,,,PROVIDER_CAPABILITY_REGISTRY
+sources[].vcs.ref_type,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/ref_type,string,false,"[""branch"", ""tag"", ""commit"", ""auto""]",,,STATIC_OPTION_MATRIX
+sources[].vcs.sparse_paths,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/sparse_paths,array,false,,,,STATIC_OPTION_MATRIX
+sources[].vcs.submodules,SCHEMA_PROPERTY,#/properties/sources/items/$ref=#/$defs/source/properties/vcs/properties/submodules,boolean,false,,,,STATIC_OPTION_MATRIX
+triggers,SCHEMA_PROPERTY,#/properties/triggers,object,false,,,,STATIC_OPTION_MATRIX
+triggers.cancel_in_progress,SCHEMA_PROPERTY,#/properties/triggers/properties/cancel_in_progress,boolean,false,,,,STATIC_OPTION_MATRIX
+triggers.concurrency_group,SCHEMA_PROPERTY,#/properties/triggers/properties/concurrency_group,string,false,,,,STATIC_OPTION_MATRIX
+triggers.deploy_branch,SCHEMA_PROPERTY,#/properties/triggers/properties/deploy_branch,string,false,,,,STATIC_OPTION_MATRIX
+triggers.manual,SCHEMA_PROPERTY,#/properties/triggers/properties/manual,boolean,false,,,,STATIC_OPTION_MATRIX
+triggers.paths,SCHEMA_PROPERTY,#/properties/triggers/properties/paths,array,false,,,,STATIC_OPTION_MATRIX
+triggers.pull_request,SCHEMA_PROPERTY,#/properties/triggers/properties/pull_request,boolean,false,,,,STATIC_OPTION_MATRIX
+triggers.push_branches,SCHEMA_PROPERTY,#/properties/triggers/properties/push_branches,array,false,,,,STATIC_OPTION_MATRIX
+triggers.schedule,SCHEMA_PROPERTY,#/properties/triggers/properties/schedule,array,false,,,,STATIC_OPTION_MATRIX
+triggers.workflow_call,SCHEMA_PROPERTY,#/properties/triggers/properties/workflow_call,boolean,false,,,,STATIC_OPTION_MATRIX
+validation,SCHEMA_PROPERTY,#/properties/validation,object,true,,,,STATIC_OPTION_MATRIX
+validation.allowed_external_hosts,SCHEMA_PROPERTY,#/properties/validation/properties/allowed_external_hosts,array,false,,,,STATIC_OPTION_MATRIX
+validation.max_archive_ratio,SCHEMA_PROPERTY,#/properties/validation/properties/max_archive_ratio,number,false,,,,STATIC_OPTION_MATRIX
+validation.max_files,SCHEMA_PROPERTY,#/properties/validation/properties/max_files,integer,false,,,,STATIC_OPTION_MATRIX
+validation.max_html_depth,SCHEMA_PROPERTY,#/properties/validation/properties/max_html_depth,integer,false,,,,STATIC_OPTION_MATRIX
+validation.max_site_bytes,SCHEMA_PROPERTY,#/properties/validation/properties/max_site_bytes,integer,false,,,,STATIC_OPTION_MATRIX
+validation.require_build_manifest,SCHEMA_PROPERTY,#/properties/validation/properties/require_build_manifest,boolean,false,,,,STATIC_OPTION_MATRIX
+validation.require_no_symlinks,SCHEMA_PROPERTY,#/properties/validation/properties/require_no_symlinks,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.required_files,SCHEMA_PROPERTY,#/properties/validation/properties/required_files,array,false,,,,STATIC_OPTION_MATRIX
+validation.unresolved_edit_policy,SCHEMA_PROPERTY,#/properties/validation/properties/unresolved_edit_policy,string,false,"[""fail"", ""omit""]",,,STATIC_OPTION_MATRIX
+validation.validate_communication_links,SCHEMA_PROPERTY,#/properties/validation/properties/validate_communication_links,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.validate_css_assets,SCHEMA_PROPERTY,#/properties/validation/properties/validate_css_assets,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.validate_edit_links,SCHEMA_PROPERTY,#/properties/validation/properties/validate_edit_links,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.validate_external_links,SCHEMA_PROPERTY,#/properties/validation/properties/validate_external_links,boolean,false,,,,STATIC_OPTION_MATRIX
+validation.validate_fragments,SCHEMA_PROPERTY,#/properties/validation/properties/validate_fragments,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.validate_local_links,SCHEMA_PROPERTY,#/properties/validation/properties/validate_local_links,boolean,false,,true,,STATIC_OPTION_MATRIX
+validation.validate_redirect_schemes,SCHEMA_PROPERTY,#/properties/validation/properties/validate_redirect_schemes,array,false,,,,STATIC_OPTION_MATRIX
+workflow,SCHEMA_PROPERTY,#/properties/workflow,object,false,,,,STATIC_OPTION_MATRIX
+workflow.actions,SCHEMA_PROPERTY,#/properties/workflow/properties/actions,object,false,,,,STATIC_OPTION_MATRIX
+workflow.actions.checkout,SCHEMA_PROPERTY,#/properties/workflow/properties/actions/properties/checkout,string,false,,,,STATIC_OPTION_MATRIX
+workflow.actions.deploy_pages,SCHEMA_PROPERTY,#/properties/workflow/properties/actions/properties/deploy_pages,string,false,,,,STATIC_OPTION_MATRIX
+workflow.actions.setup_python,SCHEMA_PROPERTY,#/properties/workflow/properties/actions/properties/setup_python,string,false,,,,STATIC_OPTION_MATRIX
+workflow.actions.upload_pages_artifact,SCHEMA_PROPERTY,#/properties/workflow/properties/actions/properties/upload_pages_artifact,string,false,,,,STATIC_OPTION_MATRIX
+workflow.build_permissions,SCHEMA_PROPERTY,#/properties/workflow/properties/build_permissions,object,false,,,,STATIC_OPTION_MATRIX
+workflow.build_timeout_minutes,SCHEMA_PROPERTY,#/properties/workflow/properties/build_timeout_minutes,integer,false,,,,STATIC_OPTION_MATRIX
+workflow.config_file,SCHEMA_PROPERTY,#/properties/workflow/properties/config_file,string,false,,,,STATIC_OPTION_MATRIX
+workflow.deploy_environment,SCHEMA_PROPERTY,#/properties/workflow/properties/deploy_environment,string,false,,,,STATIC_OPTION_MATRIX
+workflow.deploy_permissions,SCHEMA_PROPERTY,#/properties/workflow/properties/deploy_permissions,object,false,,,,STATIC_OPTION_MATRIX
+workflow.deploy_timeout_minutes,SCHEMA_PROPERTY,#/properties/workflow/properties/deploy_timeout_minutes,integer,false,,,,STATIC_OPTION_MATRIX
+workflow.environment,SCHEMA_PROPERTY,#/properties/workflow/properties/environment,object,false,,,,STATIC_OPTION_MATRIX
+workflow.file,SCHEMA_PROPERTY,#/properties/workflow/properties/file,string,false,,,,STATIC_OPTION_MATRIX
+workflow.include_hidden_files,SCHEMA_PROPERTY,#/properties/workflow/properties/include_hidden_files,boolean,false,,,,STATIC_OPTION_MATRIX
+workflow.provider,SCHEMA_PROPERTY,#/properties/workflow/properties/provider,string,false,"[""github_actions""]",,,STATIC_OPTION_MATRIX
+workflow.python_version,SCHEMA_PROPERTY,#/properties/workflow/properties/python_version,string,false,,,,STATIC_OPTION_MATRIX
+workflow.runs_on,SCHEMA_PROPERTY,#/properties/workflow/properties/runs_on,schema-fragment,false,,,,STATIC_OPTION_MATRIX
+workflow.secrets,SCHEMA_PROPERTY,#/properties/workflow/properties/secrets,object,false,,,,STATIC_OPTION_MATRIX
+workspace,SCHEMA_PROPERTY,#/properties/workspace,object,true,,,,STATIC_OPTION_MATRIX
+workspace.cleanup_delay_seconds,SCHEMA_PROPERTY,#/properties/workspace/properties/cleanup_delay_seconds,number,false,,,,STATIC_OPTION_MATRIX
+workspace.cleanup_on_failure,SCHEMA_PROPERTY,#/properties/workspace/properties/cleanup_on_failure,boolean,true,,,,STATIC_OPTION_MATRIX
+workspace.cleanup_on_success,SCHEMA_PROPERTY,#/properties/workspace/properties/cleanup_on_success,boolean,true,,,,STATIC_OPTION_MATRIX
+workspace.cleanup_retries,SCHEMA_PROPERTY,#/properties/workspace/properties/cleanup_retries,integer,false,,,,STATIC_OPTION_MATRIX
+workspace.fail_on_cleanup_error,SCHEMA_PROPERTY,#/properties/workspace/properties/fail_on_cleanup_error,boolean,true,,,,STATIC_OPTION_MATRIX
+workspace.git_user_email,SCHEMA_PROPERTY,#/properties/workspace/properties/git_user_email,string,true,,,,STATIC_OPTION_MATRIX
+workspace.git_user_name,SCHEMA_PROPERTY,#/properties/workspace/properties/git_user_name,string,true,,,,STATIC_OPTION_MATRIX
+workspace.keep_failed_workspace,SCHEMA_PROPERTY,#/properties/workspace/properties/keep_failed_workspace,boolean,false,,,,STATIC_OPTION_MATRIX
+workspace.keep_on_success,SCHEMA_PROPERTY,#/properties/workspace/properties/keep_on_success,boolean,false,,,,STATIC_OPTION_MATRIX
+workspace.lock_timeout_seconds,SCHEMA_PROPERTY,#/properties/workspace/properties/lock_timeout_seconds,integer,false,,,,STATIC_OPTION_MATRIX
+workspace.temp_root,SCHEMA_PROPERTY,#/properties/workspace/properties/temp_root,string,true,,,,STATIC_OPTION_MATRIX
+authoring_targets[].provider_label,SCHEMA_PROPERTY,#/properties/authoring_targets/items/$ref=#/$defs/authoringTarget/properties/provider_label,string,false,,,Optional non-empty display label; does not select provider adapter.,STATIC_OPTION_MATRIX
+communication.<channel>.provider_label,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/provider_label,string,false,,,Optional non-empty display label; metadata only.,DYNAMIC_CONTRACT_MATRIX
+communication.<channel>.private_target_attested,SCHEMA_PROPERTY,#/properties/communication/additionalProperties/$ref=#/$defs/communicationChannel/properties/private_target_attested,boolean,false,,,Operator assertion only; not a privacy/ACL verification.,DYNAMIC_CONTRACT_MATRIX
